@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Job Clock">
+<meta name="theme-color" content="#14181d">
+<title>Job Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: status up top, ONE big action button, today's log + mileage legs below, history tucked away */
+:root{
+  --bg:#f4f3ef; --panel:#ffffff; --fg:#1b1f24; --muted:#6a717a; --line:#e2dfd7;
+  --amber:#e8a317; --ink:#1b1f24; --green:#2f8a4e; --red:#c2412d; --blue:#2c6aa0;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#14181d; --panel:#1c2228; --fg:#eceae4; --muted:#949ca5; --line:#2b333b;
+  --amber:#f2b134; --ink:#14181d; --green:#4cb06e; --red:#e2604a; --blue:#5b9bd5;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:17px/1.45 var(--body);
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;cursor:pointer;border:0;color:var(--fg);background:none}
+input{font:inherit;color:var(--fg)}
+input:focus,button:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+header{display:flex;justify-content:space-between;align-items:center}
+.brand{font:700 22px/1 var(--display);letter-spacing:.06em;text-transform:uppercase}
+.brand span{color:var(--amber)}
+.now{font:500 15px var(--mono);color:var(--muted)}
+
+/* status */
+.status{display:flex;flex-direction:column;gap:4px;padding:6px 0 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);margin-right:8px;vertical-align:middle}
+.status[data-s="on"] .dot{background:var(--green)}
+.status[data-s="site"] .dot{background:var(--amber)}
+.state{font:700 40px/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
+.timer{font:500 18px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.where{font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+
+/* work order */
+.wo{display:flex;flex-direction:column;gap:8px}
+.wo label{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wo input{font:600 26px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:14px 16px;border:2px solid var(--line);border-radius:12px;background:var(--panel);width:100%}
+.wo input:focus{border-color:var(--amber);outline:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{padding:12px 8px;font:600 16px var(--body);display:flex;flex-direction:column;align-items:center;gap:2px}
+.seg button small{font-size:12px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button[aria-pressed="true"] small{color:var(--bg);opacity:.75}
+.leg.off{opacity:.55}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 15px var(--mono);padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+
+/* buttons */
+.go{width:100%;min-height:92px;border-radius:16px;background:var(--amber);color:var(--ink);
+  font:700 34px/1 var(--display);text-transform:uppercase;letter-spacing:.03em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.go small{font:500 14px var(--body);text-transform:none;letter-spacing:0;opacity:.75}
+.go[data-kind="out"]{background:var(--fg);color:var(--bg)}
+.go:disabled{opacity:.5;cursor:wait}
+.alt{width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;font:600 17px var(--body);background:var(--panel)}
+.notebtn{color:var(--muted);font-size:15px;text-decoration:underline;text-underline-offset:3px;align-self:center}
+.note{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);width:100%}
+.msg{font-size:15px;text-align:center;min-height:22px;color:var(--muted)}
+.msg.err{color:var(--red)}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* log */
+h2{font:700 20px var(--display);text-transform:uppercase;letter-spacing:.04em;margin:0;display:flex;justify-content:space-between;align-items:baseline}
+h2 span{font:500 15px var(--mono);color:var(--muted);letter-spacing:0;text-transform:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:10px;padding:12px 14px;border-top:1px solid var(--line);align-items:start}
+.row:first-child{border-top:0}
+.t{font:500 14px var(--mono);font-variant-numeric:tabular-nums;padding-top:2px}
+.info{min-width:0;display:flex;flex-direction:column;gap:2px}
+.tag{font:700 14px var(--display);letter-spacing:.06em;text-transform:uppercase}
+.tag.in{color:var(--green)} .tag.out{color:var(--red)} .tag.site{color:var(--amber)} .tag.leave{color:var(--blue)}
+.addr{font-size:14px;overflow-wrap:anywhere}
+.addr a{color:inherit;text-decoration-color:var(--line)}
+.meta{font-size:13px;color:var(--muted)}
+.del{color:var(--muted);font-size:14px;padding:2px 6px;border:1px solid transparent;border-radius:6px}
+.del.sure{color:var(--red);border-color:var(--red)}
+
+.leg{display:grid;grid-template-columns:64px 1fr auto;gap:10px;padding:12px 14px;border-top:1px solid var(--line);align-items:start}
+.leg:first-child{border-top:0}
+.mi{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums}
+.mi small{display:block;font:500 11px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+.route{font-size:14px;min-width:0;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:2px}
+.route .k{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.copy{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:600 13px var(--body)}
+.empty{color:var(--muted);text-align:center;padding:22px 14px;font-size:15px}
+
+details{border-top:1px solid var(--line);padding-top:14px}
+summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04em;cursor:pointer;color:var(--muted)}
+.hist{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tool{border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:600 15px var(--body);background:var(--panel)}
+@media (prefers-reduced-motion:no-preference){.go,.alt{transition:transform .08s}.go:active:not(:disabled),.alt:active{transform:scale(.98)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Job <span>Clock</span></div>
+    <div class="now" id="now"></div>
+  </header>
+
+  <section class="status" id="status" data-s="off">
+    <div class="state"><span class="dot"></span><span id="state">Off the clock</span></div>
+    <div class="timer" id="timer"></div>
+    <div class="where" id="where"></div>
+  </section>
+
+  <form class="wo" id="woBox" hidden>
+    <label for="wo">Work order #</label>
+    <input id="wo" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="Type work order">
+    <div class="chips" id="chips"></div>
+    <div class="seg" role="group" aria-label="Job type">
+      <button type="button" id="locBtn">Local<small>No mileage</small></button>
+      <button type="button" id="farBtn">Non-local<small>Mileage counts</small></button>
+    </div>
+  </form>
+
+  <div class="actions">
+    <button class="go" id="go"></button>
+    <button class="alt" id="alt" hidden></button>
+    <button class="notebtn" id="noteBtn">Add a note</button>
+    <input class="note" id="note" placeholder="Note for this punch" autocomplete="off" hidden>
+    <div class="msg" id="msg" role="status"></div>
+  </div>
+
+  <section>
+    <h2 style="margin-bottom:10px">Today <span id="todayHrs"></span></h2>
+    <div class="card" id="today"></div>
+  </section>
+
+  <section>
+    <h2 style="margin-bottom:10px">Mileage <span id="todayMi"></span></h2>
+    <div class="card" id="legs"></div>
+  </section>
+
+  <details>
+    <summary>History &amp; export</summary>
+    <div class="hist">
+      <div class="tools">
+        <button class="tool" id="csvPunch">Export punches CSV</button>
+        <button class="tool" id="csvLegs">Export mileage CSV</button>
+        <button class="tool" id="fix">Retry missing addresses</button>
+      </div>
+      <div id="history"></div>
+    </div>
+  </details>
+</div>
+
+<script>
+const KEY='jobclock.punches.v1', WOKEY='jobclock.recentwo.v1';
+const LABEL={clock_in:'Clock in',site_in:'Site check-in',site_out:'Left site',clock_out:'Clock out'};
+const CLS={clock_in:'in',site_in:'site',site_out:'leave',clock_out:'out'};
+const $=id=>document.getElementById(id);
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){say('Could not save on this phone. Check storage settings.',true)}};
+let punches=read(KEY,[]), recentWO=read(WOKEY,[]), busy=false, sureDelete=null, isLocal=read('jobclock.local.v1',true);
+function setLocal(v){isLocal=v;write('jobclock.local.v1',v);$('locBtn').setAttribute('aria-pressed',v);$('farBtn').setAttribute('aria-pressed',!v)}
+const save=()=>write(KEY,punches);
+
+const fmtTime=d=>new Date(d).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+const dayKey=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+const hm=ms=>{const m=Math.max(0,Math.floor(ms/60000));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const place=p=>p.address||(p.lat!=null?`${p.lat}, ${p.lon}`:'No location');
+function say(t,err){$('msg').textContent=t;$('msg').className='msg'+(err?' err':'')}
+
+function state(){
+  let s='off',since=null,last=null,wo=null,loc=null;
+  for(const p of punches){
+    if(p.type==='clock_in'){s='on';since=p.time}
+    else if(p.type==='site_in'){s='site';since=p.time;wo=p.workOrder;loc=p.local}
+    else if(p.type==='site_out'){s='on';since=p.time;wo=null}
+    else if(p.type==='clock_out'){s='off';since=p.time;wo=null}
+    last=p;
+  }
+  let shift=null;
+  for(let i=punches.length-1;i>=0;i--){if(punches[i].type==='clock_in'){shift=punches[i].time;break}if(punches[i].type==='clock_out')break}
+  return {s,since,last,wo,shift,loc};
+}
+
+/* ---------- location ---------- */
+function getPosition(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation)return rej(new Error('This browser has no location access.'));
+    navigator.geolocation.getCurrentPosition(res,err=>rej(new Error(
+      {1:'Location is blocked. Allow it for this site in browser settings.',2:'No GPS fix. Try stepping outside.',3:'GPS took too long.'}[err.code]||err.message
+    )),{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+  });
+}
+async function lookup(lat,lon){
+  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`);
+  if(!r.ok)throw 0;
+  const j=await r.json(),a=j.address||{};
+  const street=[a.house_number,a.road].filter(Boolean).join(' ');
+  const town=a.city||a.town||a.village||a.hamlet||a.county||'';
+  return [street,town,[a.state_code||a.state,a.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ')||j.display_name||null;
+}
+function crowMiles(a,b){
+  const R=3958.8,r=x=>x*Math.PI/180,dLat=r(b.lat-a.lat),dLon=r(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+async function driveMiles(a,b){
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`);
+  if(!r.ok)throw 0;
+  const j=await r.json();
+  if(!j.routes||!j.routes[0])throw 0;
+  return j.routes[0].distance/1609.344;
+}
+
+/* ---------- punching ---------- */
+async function punch(type){
+  if(busy)return;
+  const st=state();
+  const wo=$('wo').value.trim().toUpperCase();
+  if(type==='site_in'&&!wo){say('Type the work order # first.',true);$('wo').focus();return}
+  busy=true;render();say('Getting your location…');
+  const p={id:Date.now().toString(36),type,time:new Date().toISOString(),
+    workOrder:type==='site_in'?wo:(type==='site_out'?st.wo:null),
+    note:$('note').value.trim()||null,lat:null,lon:null,acc:null,address:null};
+  if(type==='site_in')p.local=isLocal;
+  if(type==='site_out')p.local=st.loc;
+  try{
+    const pos=await getPosition();
+    p.lat=+pos.coords.latitude.toFixed(6);p.lon=+pos.coords.longitude.toFixed(6);p.acc=Math.round(pos.coords.accuracy);
+    say('Finding the address…');
+    try{p.address=await lookup(p.lat,p.lon)}catch(e){}
+  }catch(e){say(e.message+' Saved without location.',true)}
+  // clocking out straight from a site counts as leaving it first
+  if(type==='clock_out'&&st.s==='site'){punches.push({...p,id:p.id+'s',type:'site_out',workOrder:st.wo,local:st.loc,note:null})}
+  punches.push(p);save();
+  if(type==='site_in'){recentWO=[wo,...recentWO.filter(x=>x!==wo)].slice(0,4);write(WOKEY,recentWO)}
+  $('wo').value='';$('note').value='';$('note').hidden=true;$('noteBtn').hidden=false;
+  busy=false;render();
+  if(p.lat!=null)say(`${LABEL[type]} · ${fmtTime(p.time)}${p.address?' · '+p.address:''}`);
+  fillMiles();
+}
+
+/* ---------- mileage legs ---------- */
+// A leg ends at every site check-in and at clock-out, and starts at the last punch with a location.
+function legsFor(list){
+  const legs=[];let from=null;
+  for(const p of list){
+    if((p.type==='site_in'||p.type==='clock_out')&&from&&p.lat!=null&&from.lat!=null){
+      // mileage only counts going to or coming back from a non-local job
+      const counts=(p.type==='site_in'&&p.local!==true)||(from.type==='site_out'&&from.local!==true);
+      legs.push({from,to:p,wo:p.type==='site_in'?p.workOrder:null,counts});
+    }
+    if(p.lat!=null)from=p;
+  }
+  return legs.filter(l=>l.to.legMi==null||l.to.legMi>=0.2);
+}
+async function fillMiles(){
+  const all=Object.values(byDay()).flatMap(legsFor).filter(l=>l.to.legMi==null||l.to.legSrc==='est');
+  if(!all.length)return;
+  for(const l of all){
+    try{l.to.legMi=+(await driveMiles(l.from,l.to)).toFixed(1);l.to.legSrc='road'}
+    catch(e){if(l.to.legMi==null){l.to.legMi=+(crowMiles(l.from,l.to)*1.2).toFixed(1);l.to.legSrc='est'}}
+  }
+  save();render();
+}
+function legText(l){
+  return `Miles: ${l.to.legMi??''}\nStart: ${place(l.from)}\nEnd: ${place(l.to)}\nWork Order#: ${l.wo||''}`;
+}
+async function copy(text,btn){
+  try{await navigator.clipboard.writeText(text);btn.textContent='Copied'}catch(e){btn.textContent='Copy failed'}
+  setTimeout(()=>btn.textContent='Copy',1500);
+}
+
+/* ---------- render ---------- */
+function byDay(){const d={};punches.forEach(p=>(d[dayKey(p.time)]??=[]).push(p));return d}
+function dayHours(list){
+  let t=0,start=null;
+  for(const p of list){if(p.type==='clock_in')start=new Date(p.time);if(p.type==='clock_out'&&start){t+=new Date(p.time)-start;start=null}}
+  if(start&&dayKey(start)===dayKey(new Date()))t+=Date.now()-start;
+  return t;
+}
+function punchRows(list,box){
+  box.innerHTML='';
+  list.slice().reverse().forEach(p=>{
+    const r=document.createElement('div');r.className='row';
+    const map=p.lat!=null?`https://maps.google.com/?q=${p.lat},${p.lon}`:null;
+    r.innerHTML=`<div class="t">${fmtTime(p.time)}</div><div class="info">
+      <span class="tag ${CLS[p.type]}">${LABEL[p.type]}${p.workOrder?' · '+esc(p.workOrder):''}${p.type==='site_in'&&p.local!=null?(p.local?' · Local':' · Non-local'):''}</span>
+      <span class="addr">${map?`<a href="${map}" target="_blank" rel="noopener">${esc(place(p))}</a>`:esc(place(p))}</span>
+      ${p.note?`<span class="meta">${esc(p.note)}</span>`:''}</div>`;
+    const d=document.createElement('button');
+    d.className='del'+(sureDelete===p.id?' sure':'');d.textContent=sureDelete===p.id?'Delete?':'✕';
+    d.setAttribute('aria-label','Delete punch');
+    d.onclick=()=>{if(sureDelete===p.id){punches=punches.filter(x=>x.id!==p.id);sureDelete=null;save()}else sureDelete=p.id;render()};
+    r.appendChild(d);box.appendChild(r);
+  });
+}
+function legRows(legs,box){
+  box.innerHTML='';
+  legs.forEach(l=>{
+    const r=document.createElement('div');r.className='leg'+(l.counts?'':' off');
+    r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??'…'):'0'}<small>${l.counts?(l.to.legSrc==='est'?'mi est':'miles'):'local'}</small></div>
+      <div class="route"><span class="k">From</span><span>${esc(place(l.from))}</span><span class="k">To</span><span>${esc(place(l.to))}</span>
+      <span class="k">Work order</span><span>${l.wo?esc(l.wo):'None (drive home)'}</span></div>`;
+    if(l.counts){const b=document.createElement('button');b.className='copy';b.textContent='Copy';b.onclick=()=>copy(legText(l),b);r.appendChild(b)}
+    else r.appendChild(document.createElement('span'));
+    box.appendChild(r);
+  });
+}
+
+function render(){
+  const {s,since,last,wo,shift}=state();
+  $('status').dataset.s=s;
+  $('state').textContent={off:'Off the clock',on:'On the clock',site:'At job site'}[s];
+  $('timer').textContent=shift&&s!=='off'?`Shift ${hm(Date.now()-new Date(shift))}${s==='site'?' · on site '+hm(Date.now()-new Date(since)):''}`:(since?`Last out ${fmtTime(since)}`:'');
+  $('where').textContent=s==='off'||!last?'':(s==='site'&&wo?wo+' · ':'')+place(last);
+
+  $('woBox').hidden=s!=='on';
+  $('chips').innerHTML='';
+  recentWO.forEach(w=>{const c=document.createElement('button');c.type='button';c.className='chip';c.textContent=w;c.onclick=()=>{$('wo').value=w;$('wo').focus()};$('chips').appendChild(c)});
+
+  const go=$('go'),alt=$('alt');
+  const plan={off:['clock_in','Clock in','Start your day',null],on:['site_in','Check in','Arrive at job site','clock_out'],site:['site_out','Leave site','Done at '+(wo||'this job'),'clock_out']}[s];
+  go.dataset.type=plan[0];go.dataset.kind=plan[0]==='clock_out'?'out':'';
+  go.innerHTML=busy?'Saving…<small>Getting location</small>':`${plan[1]}<small>${esc(plan[2])}</small>`;
+  go.disabled=busy;
+  alt.hidden=!plan[3];alt.dataset.type=plan[3]||'';alt.textContent='Clock out';alt.disabled=busy;
+
+  const days=byDay(),tk=dayKey(new Date()),today=days[tk]||[];
+  if(today.length){punchRows(today,$('today'))}else $('today').innerHTML='<div class="empty">Nothing yet today. Clock in when you get to the warehouse.</div>';
+  $('todayHrs').textContent=today.length?hm(dayHours(today)):'';
+  const legs=legsFor(today);
+  if(legs.length){legRows(legs,$('legs'))}else $('legs').innerHTML='<div class="empty">Each drive shows up here once you check in at a site or clock out.</div>';
+  const tot=legs.reduce((a,l)=>a+(l.counts?(l.to.legMi||0):0),0);
+  $('todayMi').textContent=legs.length?tot.toFixed(1)+' mi':'';
+
+  const h=$('history');h.innerHTML='';
+  Object.keys(days).filter(k=>k!==tk).sort().reverse().forEach(k=>{
+    const list=days[k],sec=document.createElement('section'),d=new Date(list[0].time);
+    const lg=legsFor(list),mi=lg.reduce((a,l)=>a+(l.counts?(l.to.legMi||0):0),0);
+    sec.innerHTML=`<h2 style="margin-bottom:8px">${d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}<span>${hm(dayHours(list))}${lg.length?' · '+mi.toFixed(1)+' mi':''}</span></h2>`;
+    const c=document.createElement('div');c.className='card';punchRows(list,c);sec.appendChild(c);
+    if(lg.length){const c2=document.createElement('div');c2.className='card';c2.style.marginTop='8px';legRows(lg,c2);sec.appendChild(c2)}
+    h.appendChild(sec);
+  });
+  if(!h.children.length)h.innerHTML='<div class="empty">Past days show up here.</div>';
+}
+
+/* ---------- export ---------- */
+function download(rows,name){
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+}
+$('csvPunch').onclick=()=>download([['date','time','type','work_order','address','latitude','longitude','accuracy_m','note'],
+  ...punches.map(p=>[dayKey(p.time),fmtTime(p.time),LABEL[p.type],p.workOrder,p.address,p.lat,p.lon,p.acc,p.note])],`punches-${dayKey(new Date())}.csv`);
+$('csvLegs').onclick=()=>download([['date','miles','estimated','start_location','end_location','work_order'],
+  ...Object.entries(byDay()).sort().flatMap(([k,l])=>legsFor(l).filter(x=>x.counts).map(x=>[k,x.to.legMi,x.to.legSrc==='est'?'yes':'no',place(x.from),place(x.to),x.wo]))],`mileage-${dayKey(new Date())}.csv`);
+$('fix').onclick=async()=>{
+  const todo=punches.filter(p=>p.lat!=null&&!p.address);
+  say(todo.length?`Looking up ${todo.length} address(es)…`:'Checking mileage…');
+  for(const p of todo){try{p.address=await lookup(p.lat,p.lon)}catch(e){}await new Promise(r=>setTimeout(r,1100))}
+  save();await fillMiles();render();say('Done.');
+};
+
+/* ---------- wire up ---------- */
+$('go').onclick=()=>punch($('go').dataset.type);
+$('alt').onclick=()=>punch($('alt').dataset.type);
+$('woBox').onsubmit=e=>{e.preventDefault();punch('site_in')};
+$('locBtn').onclick=()=>setLocal(true);
+$('farBtn').onclick=()=>setLocal(false);
+setLocal(isLocal);
+$('noteBtn').onclick=()=>{$('note').hidden=false;$('noteBtn').hidden=true;$('note').focus()};
+function tick(){$('now').textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
+tick();render();fillMiles();
+setInterval(()=>{tick();if(!busy&&document.activeElement.tagName!=='INPUT')render()},30000);
+</script>
+</body>
+</html>
