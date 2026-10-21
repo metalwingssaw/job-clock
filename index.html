@@ -165,6 +165,16 @@ h2 span.v{font:500 15px var(--mono);color:var(--muted);letter-spacing:0;text-tra
 .stat b{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
 .stat.ot b{color:var(--amber)}
 .stat.mi2 b{color:var(--teal)}
+.pay{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+.payrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.payamt{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums;color:var(--green,var(--teal))}
+.payamt small{display:block;font:500 12px var(--body);color:var(--muted);margin-top:4px}
+.paybtn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:600 14px var(--body)}
+.payform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.payform .wide{grid-column:1/-1}
+.paysub{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.paysub span{font-variant-numeric:tabular-nums}
+.net{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 13px var(--body);color:var(--amber);background:color-mix(in srgb,var(--amber) 15%,transparent)}
 .days{display:flex;flex-direction:column}
 .dayrow{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:9px 14px;font-size:15px;border-top:1px solid var(--line)}
 .dayrow:first-child{border-top:0}
@@ -205,7 +215,7 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
 <div class="wrap">
   <header>
     <div class="brand"><img id="logo" alt="">Job <span>Clock</span></div>
-    <div class="now" id="now"></div>
+    <div style="display:flex;align-items:center;gap:8px"><span class="net" id="net" hidden>No signal</span><div class="now" id="now"></div></div>
   </header>
 
   <section class="status" id="status" data-s="off">
@@ -257,6 +267,20 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
   <section>
     <h2><span class="h"><svg class="ic"><use href="#i-cal"/></svg>This week</span><span class="v" id="weekRange"></span></h2>
     <div class="card" id="week"></div>
+    <div class="pay" id="payBox">
+      <div class="payrow">
+        <div class="payamt" id="payAmt">$0<small>Set your rate to see your pay</small></div>
+        <button class="paybtn" id="payEdit" type="button"><svg class="ic"><use href="#i-edit"/></svg>Pay rate</button>
+      </div>
+      <div class="paysub" id="paySub"></div>
+      <form class="payform" id="payForm" hidden>
+        <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payRate">Hourly rate ($)</label><input class="field" id="payRate" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 22.50"></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payOtAfter">Overtime after (hrs/wk)</label><input class="field" id="payOtAfter" type="number" inputmode="decimal" step="0.5" min="0" placeholder="40"></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payOtMult">Overtime pay (x)</label><input class="field" id="payOtMult" type="number" inputmode="decimal" step="0.05" min="1" placeholder="1.5"></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payMile">Mileage pay ($/mi, optional)</label><input class="field" id="payMile" type="number" inputmode="decimal" step="0.001" min="0" placeholder="e.g. 0.70"></div>
+        <button class="btn pri wide" type="submit">Save pay rate</button>
+      </form>
+    </div>
   </section>
 
   <section>
@@ -446,7 +470,7 @@ async function punch(type){
   if(type==='site_in'){recentWO=[wo,...recentWO.filter(x=>x!==wo)].slice(0,4);write(WOKEY,recentWO)}
   $('wo').value='';$('note').value='';$('note').hidden=true;$('noteBtn').hidden=false;
   busy=false;render();
-  if(p.lat!=null)say(`${LABEL[type]} · ${fmtTime(p.time)}${p.address?' · '+p.address:''}`);
+  if(p.lat!=null)say(`${LABEL[type]} · ${fmtTime(p.time)}${p.address?' · '+p.address:' · address fills in when you get signal'}`);
   fillMiles();
 }
 
@@ -594,6 +618,33 @@ function weekSummary(start){
   }
   return {days:out,tot,mi,ot:Math.max(0,tot-40*3600e3)};
 }
+const PAYKEY='jobclock.pay.v1';
+let pay=read(PAYKEY,{rate:null,otAfter:40,otMult:1.5,mile:null});
+const money=n=>'$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+function payFor(w){
+  if(!pay.rate)return null;
+  const otAfter=(pay.otAfter??40)*3600e3,regMs=Math.min(w.tot,otAfter),otMs=Math.max(0,w.tot-otAfter);
+  const reg=regMs/3600e3*pay.rate,ot=otMs/3600e3*pay.rate*(pay.otMult||1.5),mi=pay.mile?w.mi*pay.mile:0;
+  return {reg,ot,mi,gross:reg+ot,regH:regMs/3600e3,otH:otMs/3600e3};
+}
+function renderPay(w){
+  const p=payFor(w);
+  if(!p){$('payAmt').innerHTML='$ —<small>Set your hourly rate to see this week\'s pay</small>';$('paySub').innerHTML='';return}
+  $('payAmt').innerHTML=`${money(p.gross)}<small>Est. pay this week, before taxes</small>`;
+  $('paySub').innerHTML=`<span>Regular: ${p.regH.toFixed(2)} hrs × ${money(pay.rate)} = ${money(p.reg)}</span>`+
+    `<span>Overtime: ${p.otH.toFixed(2)} hrs × ${money(pay.rate*(pay.otMult||1.5))} = ${money(p.ot)}</span>`+
+    (pay.mile?`<span>Mileage: ${w.mi.toFixed(1)} mi × ${money(pay.mile)} = ${money(p.mi)} (paid separately)</span>`:'');
+}
+$('payEdit').onclick=()=>{
+  const f=$('payForm');f.hidden=!f.hidden;
+  if(!f.hidden){$('payRate').value=pay.rate??'';$('payOtAfter').value=pay.otAfter??40;$('payOtMult').value=pay.otMult??1.5;$('payMile').value=pay.mile??'';$('payRate').focus()}
+};
+$('payForm').onsubmit=e=>{
+  e.preventDefault();
+  const num=(v,d)=>{const n=parseFloat(v);return isFinite(n)&&n>=0?n:d};
+  pay={rate:num($('payRate').value,null)||null,otAfter:num($('payOtAfter').value,40),otMult:num($('payOtMult').value,1.5)||1.5,mile:num($('payMile').value,null)||null};
+  write(PAYKEY,pay);$('payForm').hidden=true;render();say(pay.rate?'Pay rate saved.':'Pay rate cleared.');
+};
 function renderWeek(){
   const ws=weekStart(new Date()),w=weekSummary(ws),end=new Date(ws);end.setDate(end.getDate()+6);
   $('weekRange').textContent=`${ws.toLocaleDateString([], {month:'short',day:'numeric'})} – ${end.toLocaleDateString([], {month:'short',day:'numeric'})}`;
@@ -603,6 +654,7 @@ function renderWeek(){
       <div class="stat ot"><span class="k">Overtime</span><b>${hm(w.ot)}</b></div>
       <div class="stat mi2"><span class="k">Miles</span><b>${w.mi.toFixed(1)}</b></div></div>
     <div class="days">${w.days.filter(x=>x.h||x.m||x.k===tk).map(x=>`<div class="dayrow${x.k===tk?' today':''}">${x.d.toLocaleDateString([], {weekday:'short',month:'numeric',day:'numeric'})}<span>${hm(x.h)}</span><span>${x.m.toFixed(1)} mi</span></div>`).join('')}</div>`;
+  renderPay(w);
 }
 
 function render(){
@@ -656,7 +708,7 @@ function render(){
     if(wk!==curWeek){
       curWeek=wk;const w=weekSummary(ws);
       const head=document.createElement('div');head.className='weekhead';
-      head.innerHTML=`Week of ${ws.toLocaleDateString([], {month:'short',day:'numeric'})}<span>${hm(w.tot)}${w.ot?' · '+hm(w.ot)+' OT':''} · ${w.mi.toFixed(1)} mi</span>`;
+      head.innerHTML=`Week of ${ws.toLocaleDateString([], {month:'short',day:'numeric'})}<span>${hm(w.tot)}${w.ot?' · '+hm(w.ot)+' OT':''} · ${w.mi.toFixed(1)} mi${payFor(w)?' · '+money(payFor(w).gross):''}</span>`;
       h.appendChild(head);
     }
     const list=days[k],sec=document.createElement('section'),lg=legsFor(list);
@@ -695,7 +747,18 @@ setLocal(isLocal);
 $('noteBtn').onclick=()=>{$('note').hidden=false;$('noteBtn').hidden=true;$('note').focus()};
 document.getElementById('logo').src=document.querySelector('link[rel=apple-touch-icon]').href;
 function tick(){$('now').textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
-tick();render();fillMiles();
+// no signal: show a chip, and fill in addresses + miles once service comes back
+async function backOnline(){
+  $('net').hidden=navigator.onLine;
+  if(!navigator.onLine)return;
+  const todo=punches.filter(p=>p.lat!=null&&!p.address);
+  for(const p of todo){try{p.address=await lookup(p.lat,p.lon)}catch(e){}await new Promise(r=>setTimeout(r,1100))}
+  if(todo.length){save();render()}
+  fillMiles();
+}
+addEventListener('online',backOnline);addEventListener('offline',()=>{$('net').hidden=false});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+tick();render();backOnline();
 setInterval(()=>{tick();const a=document.activeElement?.tagName;if(!busy&&!editingId&&a!=='INPUT'&&a!=='TEXTAREA')render()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editingId){tick();render()}});
 </script>
