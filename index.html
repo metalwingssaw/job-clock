@@ -417,21 +417,74 @@ const shiftMs=sh=>(sh.end?new Date(sh.end):new Date())-new Date(sh.start);
 function hoursByDay(){const m={};shifts().forEach(sh=>{const k=dayKey(sh.start);m[k]=(m[k]||0)+shiftMs(sh)});return m}
 
 /* ---------- location ---------- */
+// GPS: watch for up to 8 seconds and keep the most accurate reading (stops early once it's within 20 m)
 function getPosition(){
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej(new Error('This browser has no location access.'));
-    navigator.geolocation.getCurrentPosition(res,err=>rej(new Error(
-      {1:'Location is blocked. Allow it for this site in browser settings.',2:'No GPS fix. Try stepping outside.',3:'GPS took too long.'}[err.code]||err.message
-    )),{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+    let best=null,done=false,id;
+    const finish=()=>{if(done)return;done=true;navigator.geolocation.clearWatch(id);clearTimeout(t1);clearTimeout(t2);best?res(best):rej(new Error('No GPS fix. Try stepping outside.'))};
+    id=navigator.geolocation.watchPosition(pos=>{
+      if(!best||pos.coords.accuracy<best.coords.accuracy)best=pos;
+      say(`Getting GPS… ±${Math.round(best.coords.accuracy*3.281)} ft`);
+      if(best.coords.accuracy<=20)finish();
+    },err=>{
+      if(err.code===1){done=true;navigator.geolocation.clearWatch(id);clearTimeout(t1);clearTimeout(t2);
+        rej(new Error('Location is blocked. On iPhone: Settings → Privacy → Location Services → Safari Websites → While Using, and turn on Precise Location.'))}
+    },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+    const t1=setTimeout(()=>{if(best)finish()},8000);
+    const t2=setTimeout(finish,20000);
   });
 }
-async function lookup(lat,lon){
-  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`);
+
+// addresses you fixed by hand get reused for any punch within ~500 ft of that spot
+const PLACEKEY='jobclock.places.v1';
+let places=read(PLACEKEY,[]);
+const meters=(a,b)=>crowMiles(a,b)*1609.344;
+function knownPlace(lat,lon){
+  let hit=null,hd=153;
+  for(const pl of places){const d=meters({lat,lon},pl);if(d<hd){hd=d;hit=pl}}
+  return hit;
+}
+function rememberPlace(lat,lon,address){
+  places=places.filter(pl=>meters({lat,lon},pl)>=153);
+  if(address)places.push({lat,lon,address});
+  write(PLACEKEY,places);
+}
+
+// nearby named place (school, business, etc.) from OpenStreetMap
+const PRIORITY=/^(school|college|university|kindergarten|hospital|clinic|library|townhall|courthouse|fire_station|police|community_centre|place_of_worship)$/;
+async function nearbyPlace(lat,lon){
+  const q=`[out:json][timeout:8];nwr(around:150,${lat},${lon})[name][~"^(amenity|shop|office|healthcare|leisure|tourism|building|craft)$"~"."];out center tags 25;`;
+  const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q));
   if(!r.ok)throw 0;
-  const j=await r.json(),a=j.address||{};
-  const street=[a.house_number,a.road].filter(Boolean).join(' ');
+  const els=(await r.json()).elements||[];
+  const scored=els.map(e=>{
+    const c=e.center||{lat:e.lat,lon:e.lon},tg=e.tags||{};
+    const pri=PRIORITY.test(tg.amenity||'')?0:(tg.shop||tg.office||tg.amenity||tg.healthcare)?1:2;
+    return {tg,pri,d:c.lat!=null?meters({lat,lon},c):999};
+  }).filter(x=>x.tg.building!=='house'&&x.tg.building!=='residential');
+  scored.sort((a,b)=>a.pri-b.pri||a.d-b.d);
+  return scored[0]?.tg||null;
+}
+async function lookup(lat,lon){
+  const known=knownPlace(lat,lon);
+  if(known)return known.address;
+  const [base,poi]=await Promise.allSettled([
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`).then(r=>{if(!r.ok)throw 0;return r.json()}),
+    nearbyPlace(lat,lon)
+  ]);
+  const j=base.status==='fulfilled'?base.value:null,a=j?.address||{},tg=poi.status==='fulfilled'?poi.value:null;
   const town=a.city||a.town||a.village||a.hamlet||a.county||'';
-  return [street,town,[a.state_code||a.state,a.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ')||j.display_name||null;
+  const stZip=[(a['ISO3166-2-lvl4']||'').split('-')[1]||a.state_code||a.state,a.postcode].filter(Boolean).join(' ');
+  if(tg?.name){
+    // use the place's own street address if it's mapped; otherwise just name + town (the nearest house number is often wrong)
+    const street=tg['addr:housenumber']&&tg['addr:street']?`${tg['addr:housenumber']} ${tg['addr:street']}`:'';
+    const ptown=tg['addr:city']||town,pzip=[(a['ISO3166-2-lvl4']||'').split('-')[1]||a.state_code||a.state||tg['addr:state'],tg['addr:postcode']||a.postcode].filter(Boolean).join(' ');
+    return [tg.name,street,ptown,pzip].filter(Boolean).join(', ');
+  }
+  if(!j)throw 0;
+  const street=[a.house_number,a.road].filter(Boolean).join(' ');
+  return [street,town,stZip].filter(Boolean).join(', ')||j.display_name||null;
 }
 function crowMiles(a,b){
   const R=3958.8,r=x=>x*Math.PI/180,dLat=r(b.lat-a.lat),dLon=r(b.lon-a.lon);
@@ -552,7 +605,9 @@ function editPanel(p){
   sv.onclick=()=>{
     if(!time.value){say('Pick a time.',true);return}
     p.time=new Date(time.value).toISOString();
-    p.address=addr.value.trim()||null;p.note=note.value.trim()||null;
+    const newAddr=addr.value.trim()||null;
+    if(newAddr!==p.address&&newAddr&&p.lat!=null)rememberPlace(p.lat,p.lon,newAddr);
+    p.address=newAddr;p.note=note.value.trim()||null;
     if(p.type==='site_in'){
       p.workOrder=wo.value.trim().toUpperCase()||p.workOrder;p.local=loc;
       // carry the work order and local/non-local over to the matching "left site"
@@ -561,7 +616,7 @@ function editPanel(p){
         if(punches[j].type==='site_out'){punches[j].workOrder=p.workOrder;punches[j].local=p.local;break}
       }
     }
-    editingId=null;sureDelete=null;save();render();say('Punch updated.');
+    editingId=null;sureDelete=null;save();render();say(newAddr&&p.lat!=null?'Punch updated. That address will be used next time you punch here.':'Punch updated.');
   };
   cn.onclick=()=>{editingId=null;sureDelete=null;render()};
   dl.onclick=async()=>{
