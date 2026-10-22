@@ -84,6 +84,12 @@ textarea.field{min-height:84px;resize:vertical}
 .seg button[aria-pressed="true"]:last-child{color:var(--teal)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:500 15px var(--mono);padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);display:inline-flex;align-items:center;gap:6px}
+.woopts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nowo{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font:600 15px var(--body);cursor:pointer}
+.nowo input{width:20px;height:20px;accent-color:var(--teal);margin:0}
+.nowo:has(input:checked){border-color:var(--teal);color:var(--teal)}
+.whbtn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font:600 15px var(--body);color:var(--blue)}
+.wo input:disabled{opacity:.45}
 .chip .ic{color:var(--muted);width:.95em;height:.95em}
 
 /* big button: color = what you're about to do */
@@ -194,6 +200,7 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6v10H3z"/><path d="M9 20v-6h6v6"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></symbol>
 <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
@@ -240,6 +247,10 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
     <label class="k" for="wo"><svg class="ic"><use href="#i-hash"/></svg> Work order #</label>
     <input id="wo" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="Type work order">
     <div class="chips" id="chips"></div>
+    <div class="woopts">
+      <label class="nowo" for="noWo"><input type="checkbox" id="noWo">No work order</label>
+      <button type="button" class="whbtn" id="whBtn"><svg class="ic"><use href="#i-truck"/></svg>Back at warehouse</button>
+    </div>
     <div class="seg" role="group" aria-label="Job type">
       <button type="button" id="locBtn">Local<small>No mileage</small></button>
       <button type="button" id="farBtn">Non-local<small>Mileage counts</small></button>
@@ -308,10 +319,13 @@ const LABEL={clock_in:'Clock in',site_in:'Site check-in',site_out:'Left site',cl
 const CLS={clock_in:'in',site_in:'site',site_out:'leave',clock_out:'out'};
 const $=id=>document.getElementById(id);
 const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+const WAREHOUSE='Attronica Warehouse, 306 Ashcake Rd, Ashland, VA 23005';
+const lab=p=>p.warehouse?(p.type==='site_in'?'Warehouse':'Left warehouse'):LABEL[p.type];
 const ICON={clock_in:'in',site_in:'tool',site_out:'truck',clock_out:'out'};
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){say('Could not save on this phone. Check storage settings.',true)}};
 let punches=read(KEY,[]), recentWO=read(WOKEY,[]), busy=false, isLocal=read('jobclock.local.v1',true);
+punches.forEach(p=>{if(p.locating)delete p.locating});
 let editingId=null, sureDelete=null, surePhoto=null;
 const save=()=>{punches.sort((a,b)=>a.time<b.time?-1:a.time>b.time?1:0);write(KEY,punches)};
 function setLocal(v){isLocal=v;write('jobclock.local.v1',v);$('locBtn').setAttribute('aria-pressed',v);$('farBtn').setAttribute('aria-pressed',!v)}
@@ -322,7 +336,7 @@ const dayKey=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMont
 const weekStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}; // Monday
 const hm=ms=>{const m=Math.max(0,Math.floor(ms/60000));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const place=p=>p.address||(p.lat!=null?`${p.lat}, ${p.lon}`:'No location');
+const place=p=>p.address||(p.locating?'Getting location…':p.lat!=null?`${p.lat}, ${p.lon}`:'No location');
 const toLocalInput=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,16)};
 function say(t,err){$('msg').textContent=t;$('msg').className='msg'+(err?' err':'')}
 
@@ -391,17 +405,17 @@ function jobEditor(visit){
 
 /* ---------- state ---------- */
 function state(){
-  let s='off',since=null,last=null,wo=null,loc=null,visit=null;
+  let s='off',since=null,last=null,wo=null,loc=null,visit=null,wh=false;
   for(const p of punches){
     if(p.type==='clock_in'){s='on';since=p.time}
-    else if(p.type==='site_in'){s='site';since=p.time;wo=p.workOrder;loc=p.local;visit=p}
+    else if(p.type==='site_in'){s='site';since=p.time;wo=p.workOrder;loc=p.local;visit=p;wh=!!p.warehouse}
     else if(p.type==='site_out'){s='on';since=p.time;wo=null;visit=null}
     else if(p.type==='clock_out'){s='off';since=p.time;wo=null;visit=null}
     last=p;
   }
   let shift=null;
   for(let i=punches.length-1;i>=0;i--){if(punches[i].type==='clock_in'){shift=punches[i].time;break}if(punches[i].type==='clock_out')break}
-  return {s,since,last,wo,shift,loc,visit};
+  return {s,since,last,wo,shift,loc,visit,wh};
 }
 // every clock-in paired with the next clock-out; hours land on the day you clocked in
 function shifts(){
@@ -426,17 +440,20 @@ function getPosition(){
     id=navigator.geolocation.watchPosition(pos=>{
       if(!best||pos.coords.accuracy<best.coords.accuracy)best=pos;
       say(`Getting GPS… ±${Math.round(best.coords.accuracy*3.281)} ft`);
-      if(best.coords.accuracy<=20)finish();
+      if(best.coords.accuracy<=25)finish();
     },err=>{
       if(err.code===1){done=true;navigator.geolocation.clearWatch(id);clearTimeout(t1);clearTimeout(t2);
         rej(new Error('Location is blocked. On iPhone: Settings → Privacy → Location Services → Safari Websites → While Using, and turn on Precise Location.'))}
     },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
-    const t1=setTimeout(()=>{if(best)finish()},8000);
-    const t2=setTimeout(finish,20000);
+    const t1=setTimeout(()=>{if(best&&best.coords.accuracy<=100)finish()},4000);
+    const t3=setTimeout(()=>{if(best)finish()},8000);
+    const t2=setTimeout(()=>{clearTimeout(t3);finish()},15000);
   });
 }
 
 // addresses you fixed by hand get reused for any punch within ~500 ft of that spot
+// give up on a slow lookup after a few seconds instead of hanging
+function fetchT(url,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t))}
 const PLACEKEY='jobclock.places.v1';
 let places=read(PLACEKEY,[]);
 const meters=(a,b)=>crowMiles(a,b)*1609.344;
@@ -449,13 +466,15 @@ function rememberPlace(lat,lon,address){
   places=places.filter(pl=>meters({lat,lon},pl)>=153);
   if(address)places.push({lat,lon,address});
   write(PLACEKEY,places);
+  // fix earlier punches at this same spot that got a wrong auto address
+  if(address)punches.forEach(p=>{if(p.lat!=null&&!p.manualAddr&&meters({lat,lon},p)<153)p.address=address});
 }
 
 // nearby named place (school, business, etc.) from OpenStreetMap
 const PRIORITY=/^(school|college|university|kindergarten|hospital|clinic|library|townhall|courthouse|fire_station|police|community_centre|place_of_worship)$/;
 async function nearbyPlace(lat,lon){
-  const q=`[out:json][timeout:8];nwr(around:150,${lat},${lon})[name][~"^(amenity|shop|office|healthcare|leisure|tourism|building|craft)$"~"."];out center tags 25;`;
-  const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q));
+  const q=`[out:json][timeout:5];nwr(around:150,${lat},${lon})[name][~"^(amenity|shop|office|healthcare|leisure|tourism|building|craft)$"~"."];out center tags 25;`;
+  const r=await fetchT('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q),6000);
   if(!r.ok)throw 0;
   const els=(await r.json()).elements||[];
   const scored=els.map(e=>{
@@ -470,7 +489,7 @@ async function lookup(lat,lon){
   const known=knownPlace(lat,lon);
   if(known)return known.address;
   const [base,poi]=await Promise.allSettled([
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`).then(r=>{if(!r.ok)throw 0;return r.json()}),
+    fetchT(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`,6000).then(r=>{if(!r.ok)throw 0;return r.json()}),
     nearbyPlace(lat,lon)
   ]);
   const j=base.status==='fulfilled'?base.value:null,a=j?.address||{},tg=poi.status==='fulfilled'?poi.value:null;
@@ -500,30 +519,48 @@ async function driveMiles(a,b){
 }
 
 /* ---------- punching ---------- */
-async function punch(type){
-  if(busy)return;
-  const st=state();
-  const wo=$('wo').value.trim().toUpperCase();
-  if(type==='site_in'&&!wo){say('Type the work order # first.',true);$('wo').focus();return}
-  busy=true;render();say('Getting your location…');
+let lastTap=0;
+async function punch(type,opt={}){
+  if(Date.now()-lastTap<1500)return; // ignore accidental double taps
+  const st=state(),noWo=$('noWo').checked||opt.warehouse;
+  const wo=noWo?'':$('wo').value.trim().toUpperCase();
+  if(type==='site_in'&&!wo&&!noWo){say('Type the work order #, or tick No work order.',true);$('wo').focus();return}
+  // save the punch right away at the time you tapped; location + address fill in behind the scenes
   const p={id:Date.now().toString(36),type,time:new Date().toISOString(),
-    workOrder:type==='site_in'?wo:(type==='site_out'?st.wo:null),
-    note:$('note').value.trim()||null,lat:null,lon:null,acc:null,address:null};
-  if(type==='site_in')p.local=isLocal;
+    workOrder:type==='site_in'?(wo||null):(type==='site_out'?st.wo:null),
+    note:$('note').value.trim()||null,lat:null,lon:null,acc:null,address:null,locating:true};
+  if(type==='site_in')p.local=opt.warehouse?true:isLocal;
   if(type==='site_out')p.local=st.loc;
+  if(type==='site_in'&&opt.warehouse)p.warehouse=true;
+  if(type==='site_out'&&st.wh)p.warehouse=true;
+  if(p.warehouse)p.address=WAREHOUSE;
+  const group=[p];
+  // clocking out straight from a site counts as leaving it first
+  if(type==='clock_out'&&st.s==='site'){const so={...p,id:p.id+'s',type:'site_out',workOrder:st.wo,local:st.loc,warehouse:st.wh||undefined,note:null};if(st.wh)so.address=WAREHOUSE;group.unshift(so)}
+  punches.push(...group);save();
+  if(type==='site_in'&&wo){recentWO=[wo,...recentWO.filter(x=>x!==wo)].slice(0,4);write(WOKEY,recentWO)}
+  $('noWo').checked=false;$('wo').disabled=false;$('wo').value='';$('note').value='';$('note').hidden=true;$('noteBtn').hidden=false;
+  lastTap=Date.now();render();say(`${lab(p)} saved · ${fmtTime(p.time)}`);
+  locate(group);
+}
+async function locate(group){
+  const p=group[group.length-1],set=(k,v)=>group.forEach(x=>x[k]=v);
   try{
     const pos=await getPosition();
-    p.lat=+pos.coords.latitude.toFixed(6);p.lon=+pos.coords.longitude.toFixed(6);p.acc=Math.round(pos.coords.accuracy);
-    say('Finding the address…');
-    try{p.address=await lookup(p.lat,p.lon)}catch(e){}
-  }catch(e){say(e.message+' Saved without location.',true)}
-  // clocking out straight from a site counts as leaving it first
-  if(type==='clock_out'&&st.s==='site'){punches.push({...p,id:p.id+'s',type:'site_out',workOrder:st.wo,local:st.loc,note:null})}
-  punches.push(p);save();
-  if(type==='site_in'){recentWO=[wo,...recentWO.filter(x=>x!==wo)].slice(0,4);write(WOKEY,recentWO)}
-  $('wo').value='';$('note').value='';$('note').hidden=true;$('noteBtn').hidden=false;
-  busy=false;render();
-  if(p.lat!=null)say(`${LABEL[type]} · ${fmtTime(p.time)}${p.address?' · '+p.address:' · address fills in when you get signal'}`);
+    set('lat',+pos.coords.latitude.toFixed(6));set('lon',+pos.coords.longitude.toFixed(6));set('acc',Math.round(pos.coords.accuracy));
+    if(p.warehouse&&p.type==='site_in'&&p.acc<=150)rememberPlace(p.lat,p.lon,WAREHOUSE);
+    if(!p.address){
+      const known=knownPlace(p.lat,p.lon);
+      if(known)group.forEach(x=>{if(!x.address)x.address=known.address});
+    }
+    set('locating',false);save();render();
+    if(!p.address){
+      say('Finding the address…');
+      try{const a=await lookup(p.lat,p.lon);group.forEach(x=>{if(!x.address)x.address=a})}catch(e){}
+    }
+    save();render();
+    say(`${lab(p)} · ${fmtTime(p.time)}${p.address?' · '+p.address:' · address fills in when you get signal'}`);
+  }catch(e){set('locating',false);save();render();say(e.message+' Punch saved without location.',true)}
   fillMiles();
 }
 
@@ -554,7 +591,7 @@ function legsFor(list){
     if((p.type==='site_in'||p.type==='clock_out')&&from&&p.lat!=null&&from.lat!=null){
       // mileage only counts going to or coming back from a non-local job
       const counts=(p.type==='site_in'&&p.local!==true)||(from.type==='site_out'&&from.local!==true);
-      legs.push({from,to:p,wo:p.type==='site_in'?p.workOrder:null,counts});
+      legs.push({from,to:p,wo:p.type==='site_in'?p.workOrder:null,wh:!!(p.type==='site_in'&&p.warehouse),counts});
     }
     if(p.lat!=null)from=p;
   }
@@ -581,9 +618,9 @@ function editPanel(p){
   const box=document.createElement('div');box.className='edit';
   const f=(label,el)=>{const w=document.createElement('div');w.style.cssText='display:flex;flex-direction:column;gap:4px';const l=document.createElement('label');l.className='k';l.textContent=label;l.htmlFor=el.id;w.append(l,el);return w};
   const time=Object.assign(document.createElement('input'),{type:'datetime-local',className:'field',id:'eTime-'+p.id,value:toLocalInput(p.time)});
-  box.append(f(LABEL[p.type]+' time',time));
+  box.append(f(lab(p)+' time',time));
   let wo,loc=p.local;
-  if(p.type==='site_in'){
+  if(p.type==='site_in'&&!p.warehouse){
     wo=Object.assign(document.createElement('input'),{className:'field',id:'eWo-'+p.id,value:p.workOrder||'',autocapitalize:'characters'});
     box.append(f('Work order #',wo));
     const seg=document.createElement('div');seg.className='seg';
@@ -606,10 +643,10 @@ function editPanel(p){
     if(!time.value){say('Pick a time.',true);return}
     p.time=new Date(time.value).toISOString();
     const newAddr=addr.value.trim()||null;
-    if(newAddr!==p.address&&newAddr&&p.lat!=null)rememberPlace(p.lat,p.lon,newAddr);
+    if(newAddr!==p.address){p.manualAddr=true;if(newAddr&&p.lat!=null)rememberPlace(p.lat,p.lon,newAddr)}
     p.address=newAddr;p.note=note.value.trim()||null;
-    if(p.type==='site_in'){
-      p.workOrder=wo.value.trim().toUpperCase()||p.workOrder;p.local=loc;
+    if(p.type==='site_in'&&!p.warehouse){
+      p.workOrder=wo.value.trim().toUpperCase()||null;p.local=loc;
       // carry the work order and local/non-local over to the matching "left site"
       save();const i=punches.indexOf(p);
       for(let j=i+1;j<punches.length&&punches[j].type!=='site_in'&&punches[j].type!=='clock_in';j++){
@@ -636,9 +673,9 @@ function punchRows(list,box){
     if(editingId===p.id){box.appendChild(editPanel(p));return}
     const r=document.createElement('div');r.className='row';
     const map=p.lat!=null?`https://maps.google.com/?q=${p.lat},${p.lon}`:null;
-    const tagExtra=(p.workOrder?' · '+esc(p.workOrder):'')+(p.type==='site_in'&&p.local!=null?(p.local?' · Local':' · Non-local'):'');
-    r.innerHTML=`<div class="badge ${CLS[p.type]}">${ic(ICON[p.type])}</div><div class="info">
-      <div class="tagline"><span class="tag">${LABEL[p.type]}${tagExtra}</span><span class="t">${fmtTime(p.time)}</span></div>
+    const tagExtra=(p.workOrder?' · '+esc(p.workOrder):(p.type==='site_in'&&!p.warehouse?' · No WO':''))+(p.type==='site_in'&&!p.warehouse&&p.local!=null?(p.local?' · Local':' · Non-local'):'');
+    r.innerHTML=`<div class="badge ${CLS[p.type]}">${ic(p.warehouse?'home':ICON[p.type])}</div><div class="info">
+      <div class="tagline"><span class="tag">${lab(p)}${tagExtra}</span><span class="t">${fmtTime(p.time)}</span></div>
       <span class="addr">${map?`<a href="${map}" target="_blank" rel="noopener">${esc(place(p))}</a>`:esc(place(p))}</span>
       ${p.note?`<span class="meta">${esc(p.note)}</span>`:''}
       ${p.jobNotes?`<span class="meta">${ic('note')}<span>${esc(p.jobNotes)}</span></span>`:''}</div>`;
@@ -658,7 +695,7 @@ function legRows(legs,box){
     const r=document.createElement('div');r.className='leg'+(l.counts?'':' off');
     r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??'…'):'0'}<small>${l.counts?(l.to.legSrc==='est'?'mi est':'miles'):'local'}</small></div>
       <div class="route"><span class="k">From</span><span>${esc(place(l.from))}</span><span class="k">To</span><span>${esc(place(l.to))}</span>
-      <span class="k">Work order</span><span>${l.wo?esc(l.wo):'None (drive home)'}</span></div>`;
+      <span class="k">Work order</span><span>${l.wo?esc(l.wo):l.wh?'Warehouse':l.to.type==='clock_out'?'None (drive home)':'None'}</span></div>`;
     if(l.counts){const b=document.createElement('button');b.className='copy';b.innerHTML=ic('copy')+'Copy';b.onclick=()=>copy(legText(l),b);r.appendChild(b)}
     else r.appendChild(document.createElement('span'));
     box.appendChild(r);
@@ -715,7 +752,7 @@ function renderWeek(){
 function render(){
   const st=state(),{s,since,last,wo,shift,visit}=st;
   $('status').dataset.s=s;
-  $('state').textContent={off:'Off the clock',on:'On the clock',site:'At job site'}[s];
+  $('state').textContent={off:'Off the clock',on:'On the clock',site:st.wh?'At warehouse':'At job site'}[s];
   $('pill').textContent={off:'Off',on:'Working',site:'On site'}[s];
   $('timer').textContent=shift&&s!=='off'?`Shift ${hm(Date.now()-new Date(shift))}${s==='site'?' · on site '+hm(Date.now()-new Date(since)):''}`:(since?`Last out ${fmtTime(since)}`:'');
   $('where').innerHTML=s==='off'||!last?'':ic('pin')+'<span>'+esc((s==='site'&&wo?wo+' · ':'')+place(last))+'</span>';
@@ -732,7 +769,7 @@ function render(){
   recentWO.forEach(w=>{const c=document.createElement('button');c.type='button';c.className='chip';c.innerHTML=ic('hash')+esc(w);c.onclick=()=>{$('wo').value=w;$('wo').focus()};$('chips').appendChild(c)});
 
   const go=$('go'),alt=$('alt');
-  const plan={off:['clock_in','Clock in','Start your day',null],on:['site_in','Check in','Arrive at job site','clock_out'],site:['site_out','Leave site','Done at '+(wo||'this job'),'clock_out']}[s];
+  const plan={off:['clock_in','Clock in','Start your day',null],on:['site_in','Check in','Arrive at job site','clock_out'],site:st.wh?['site_out','Leave warehouse','Heading out','clock_out']:['site_out','Leave site','Done at '+(wo||'this job'),'clock_out']}[s];
   go.dataset.type=plan[0];
   go.innerHTML=busy?`${ic('pin')}<span class="lbl">Saving…<small>Getting location</small></span>`:`${ic(ICON[plan[0]])}<span class="lbl">${plan[1]}<small>${esc(plan[2])}</small></span>`;
   go.disabled=busy;
@@ -740,8 +777,8 @@ function render(){
 
   // job notes + photos while on site (keep the box alive while typing)
   const jb=$('jobBox');
-  if(s==='site'&&visit){
-    jb.hidden=false;$('jobTitle').textContent=`Job notes · ${visit.workOrder||''}`;
+  if(s==='site'&&visit&&!st.wh){
+    jb.hidden=false;$('jobTitle').textContent=`Job notes · ${visit.workOrder||'No work order'}`;
     const typing=document.activeElement?.id==='jobNotes-'+visit.id;
     if(!typing||jb.dataset.v!==visit.id+(visit.photos||[]).join()+surePhoto){$('jobBody').replaceChildren(jobEditor(visit));jb.dataset.v=visit.id+(visit.photos||[]).join()+surePhoto}
   }else{jb.hidden=true;$('jobBody').innerHTML='';jb.dataset.v=''}
@@ -782,7 +819,7 @@ function download(rows,name){
   document.body.appendChild(a);a.click();a.remove();
 }
 $('csvPunch').onclick=()=>download([['date','time','type','work_order','local','address','latitude','longitude','note','job_notes','photos'],
-  ...punches.map(p=>[dayKey(p.time),fmtTime(p.time),LABEL[p.type],p.workOrder,p.local==null?'':(p.local?'local':'non-local'),p.address,p.lat,p.lon,p.note,p.jobNotes,(p.photos||[]).length||''])],`punches-${dayKey(new Date())}.csv`);
+  ...punches.map(p=>[dayKey(p.time),fmtTime(p.time),lab(p),p.workOrder,p.local==null?'':(p.local?'local':'non-local'),p.address,p.lat,p.lon,p.note,p.jobNotes,(p.photos||[]).length||''])],`punches-${dayKey(new Date())}.csv`);
 $('csvLegs').onclick=()=>download([['date','miles','estimated','start_location','end_location','work_order'],
   ...Object.entries(byDay()).sort().flatMap(([k,l])=>legsFor(l).filter(x=>x.counts).map(x=>[k,x.to.legMi,x.to.legSrc==='est'?'yes':'no',place(x.from),place(x.to),x.wo]))],`mileage-${dayKey(new Date())}.csv`);
 $('fix').onclick=async()=>{
@@ -796,6 +833,8 @@ $('fix').onclick=async()=>{
 $('go').onclick=()=>punch($('go').dataset.type);
 $('alt').onclick=()=>punch($('alt').dataset.type);
 $('woBox').onsubmit=e=>{e.preventDefault();punch('site_in')};
+$('whBtn').onclick=()=>punch('site_in',{warehouse:true});
+$('noWo').onchange=()=>{$('wo').disabled=$('noWo').checked;if($('noWo').checked)$('wo').value=''};
 $('locBtn').onclick=()=>setLocal(true);
 $('farBtn').onclick=()=>setLocal(false);
 setLocal(isLocal);
