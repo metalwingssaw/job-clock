@@ -457,11 +457,17 @@ function fetchT(url,ms){const c=new AbortController(),t=setTimeout(()=>c.abort()
 const PLACEKEY='jobclock.places.v1';
 let places=read(PLACEKEY,[]);
 const meters=(a,b)=>crowMiles(a,b)*1609.344;
+// built-in spots everyone at Attronica uses
+const BUILTIN=[{lat:37.74442,lon:-77.467856,address:WAREHOUSE,r:200}];
 function knownPlace(lat,lon){
   let hit=null,hd=153;
   for(const pl of places){const d=meters({lat,lon},pl);if(d<hd){hd=d;hit=pl}}
-  return hit;
+  if(hit)return hit;
+  for(const pl of BUILTIN)if(meters({lat,lon},pl)<pl.r)return pl;
+  return null;
 }
+// fix older punches at the warehouse that got a nearby business or house number
+setTimeout(()=>{let n=0;punches.forEach(p=>{if(p.lat!=null&&!p.manualAddr&&p.address!==WAREHOUSE&&meters(p,BUILTIN[0])<BUILTIN[0].r){p.address=WAREHOUSE;n++}});if(n){save();render()}},0);
 function rememberPlace(lat,lon,address){
   places=places.filter(pl=>meters({lat,lon},pl)>=153);
   if(address)places.push({lat,lon,address});
