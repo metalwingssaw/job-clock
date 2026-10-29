@@ -325,7 +325,8 @@ const ICON={clock_in:'in',site_in:'tool',site_out:'truck',clock_out:'out'};
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){say('Could not save on this phone. Check storage settings.',true)}};
 let punches=read(KEY,[]), recentWO=read(WOKEY,[]), busy=false, isLocal=read('jobclock.local.v1',true);
-punches.forEach(p=>{if(p.locating)delete p.locating});
+const relocate=[];
+punches.forEach(p=>{if(p.locating){delete p.locating;if(p.lat==null&&Date.now()-new Date(p.time)<15*60e3&&!p.manualAddr)relocate.push(p)}});
 let editingId=null, sureDelete=null, surePhoto=null;
 const save=()=>{punches.sort((a,b)=>a.time<b.time?-1:a.time>b.time?1:0);write(KEY,punches)};
 function setLocal(v){isLocal=v;write('jobclock.local.v1',v);$('locBtn').setAttribute('aria-pressed',v);$('farBtn').setAttribute('aria-pressed',!v)}
@@ -546,7 +547,7 @@ async function punch(type,opt={}){
   punches.push(...group);save();
   if(type==='site_in'&&wo){recentWO=[wo,...recentWO.filter(x=>x!==wo)].slice(0,4);write(WOKEY,recentWO)}
   $('noWo').checked=false;$('wo').disabled=false;$('wo').value='';$('note').value='';$('note').hidden=true;$('noteBtn').hidden=false;
-  lastTap=Date.now();render();say(`${lab(p)} saved · ${fmtTime(p.time)}`);
+  lastTap=Date.now();render();say(`${lab(p)} saved · ${fmtTime(p.time)} · keep the app open a few seconds for GPS`);
   locate(group);
 }
 async function locate(group){
@@ -594,24 +595,53 @@ $('forgotKeep').onclick=()=>{write(DISMISS,state().shift);render()};
 function legsFor(list){
   const legs=[];let from=null;
   for(const p of list){
-    if((p.type==='site_in'||p.type==='clock_out')&&from&&p.lat!=null&&from.lat!=null){
+    if((p.type==='site_in'||p.type==='clock_out')&&from&&hasLoc(p)){
       // mileage only counts going to or coming back from a non-local job
       const counts=(p.type==='site_in'&&p.local!==true)||(from.type==='site_out'&&from.local!==true);
       legs.push({from,to:p,wo:p.type==='site_in'?p.workOrder:null,wh:!!(p.type==='site_in'&&p.warehouse),counts});
     }
-    if(p.lat!=null)from=p;
+    if(hasLoc(p))from=p;
   }
-  return legs.filter(l=>l.to.legMi==null||l.to.legMi>=0.2);
+  return legs.filter(l=>l.to.legMi==null||l.to.legMi>=0.2||l.to.legSrc==='manual');
 }
 const legMiles=legs=>legs.reduce((a,l)=>a+(l.counts?(l.to.legMi||0):0),0);
+// a punch counts as a stop if it has GPS or an address you typed in
+const hasLoc=p=>p.lat!=null||(p.address&&p.address!=='Entered by hand');
+// GPS spot for a punch: its own fix, or the address looked up on the map
+async function coordsOf(p){
+  if(p.lat!=null)return {lat:p.lat,lon:p.lon};
+  if(p.glat!=null&&p.gaddr===p.address)return {lat:p.glat,lon:p.glon};
+  const r=await fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=1&q='+encodeURIComponent(p.address),6000);
+  if(!r.ok)throw 0;
+  const j=(await r.json())[0];if(!j)throw 0;
+  p.glat=+(+j.lat).toFixed(6);p.glon=+(+j.lon).toFixed(6);p.gaddr=p.address;
+  await new Promise(r=>setTimeout(r,1100)); // map lookup asks for 1 request a second
+  return {lat:p.glat,lon:p.glon};
+}
+let filling=false;
 async function fillMiles(){
-  const all=Object.values(byDay()).flatMap(legsFor).filter(l=>l.to.legMi==null||l.to.legSrc==='est');
-  if(!all.length)return;
-  for(const l of all){
-    try{l.to.legMi=+(await driveMiles(l.from,l.to)).toFixed(1);l.to.legSrc='road'}
-    catch(e){if(l.to.legMi==null){l.to.legMi=+(crowMiles(l.from,l.to)*1.2).toFixed(1);l.to.legSrc='est'}}
-  }
+  if(filling)return;filling=true;
+  try{
+    const all=Object.values(byDay()).flatMap(legsFor).filter(l=>l.to.legSrc!=='manual'&&(l.to.legMi==null||l.to.legSrc==='est'||l.to.legKey!==legKey(l)));
+    for(const l of all){
+      let a,b;
+      try{a=await coordsOf(l.from);b=await coordsOf(l.to)}catch(e){continue} // can't place it: leave it for you to type miles
+      try{l.to.legMi=+(await driveMiles(a,b)).toFixed(1);l.to.legSrc='road'}
+      catch(e){l.to.legMi=+(crowMiles(a,b)*1.2).toFixed(1);l.to.legSrc='est'}
+      l.to.legKey=legKey(l);
+    }
+  }finally{filling=false}
   save();render();
+}
+// if the start or end of a drive changes (edited address, different stop), re-figure the miles
+const legKey=l=>[l.from.id,l.from.lat??l.from.address,l.to.lat??l.to.address].join('|');
+function editMiles(l,box){
+  box.innerHTML='';
+  const inp=Object.assign(document.createElement('input'),{type:'number',inputmode:'decimal',step:'0.1',min:'0',className:'field',id:'mi-'+l.to.id,value:l.to.legMi??'',placeholder:'Miles'});
+  inp.style.cssText='width:90px;padding:8px';
+  const ok=Object.assign(document.createElement('button'),{type:'button',className:'copy',textContent:'Save'});
+  ok.onclick=()=>{const n=parseFloat(inp.value);if(isFinite(n)&&n>=0){l.to.legMi=+n.toFixed(1);l.to.legSrc='manual'}else{delete l.to.legMi;delete l.to.legSrc}save();render();fillMiles()};
+  box.append(inp,ok);inp.focus();
 }
 const legText=l=>`Miles: ${l.to.legMi??''}\nStart: ${place(l.from)}\nEnd: ${place(l.to)}\nWork Order#: ${l.wo||''}`;
 async function copy(text,btn){
@@ -699,11 +729,16 @@ function legRows(legs,box){
   box.innerHTML='';
   legs.forEach(l=>{
     const r=document.createElement('div');r.className='leg'+(l.counts?'':' off');
-    r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??'…'):'0'}<small>${l.counts?(l.to.legSrc==='est'?'mi est':'miles'):'local'}</small></div>
+    const unknown=l.counts&&l.to.legMi==null&&!filling;
+    r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??(unknown?'?':'…')):'0'}<small>${l.counts?(unknown?'add miles':l.to.legSrc==='est'?'mi est':l.to.legSrc==='manual'?'typed':'miles'):'local'}</small></div>
       <div class="route"><span class="k">From</span><span>${esc(place(l.from))}</span><span class="k">To</span><span>${esc(place(l.to))}</span>
       <span class="k">Work order</span><span>${l.wo?esc(l.wo):l.wh?'Warehouse':l.to.type==='clock_out'?'None (drive home)':'None'}</span></div>`;
-    if(l.counts){const b=document.createElement('button');b.className='copy';b.innerHTML=ic('copy')+'Copy';b.onclick=()=>copy(legText(l),b);r.appendChild(b)}
-    else r.appendChild(document.createElement('span'));
+    if(l.counts){
+      const col=document.createElement('div');col.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:flex-end';
+      const b=document.createElement('button');b.className='copy';b.innerHTML=ic('copy')+'Copy';b.onclick=()=>copy(legText(l),b);
+      const e=document.createElement('button');e.className='copy';e.innerHTML=ic('edit')+'Miles';e.onclick=()=>editMiles(l,col);
+      if(l.to.legMi!=null)col.append(b);col.append(e);r.appendChild(col);
+    }else r.appendChild(document.createElement('span'));
     box.appendChild(r);
   });
 }
@@ -859,6 +894,7 @@ async function backOnline(){
 addEventListener('online',backOnline);addEventListener('offline',()=>{$('net').hidden=false});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 tick();render();backOnline();
+if(relocate.length){say('Finishing your last punch\'s location…');relocate.forEach(p=>{p.locating=true;p.address=p.address||null;locate([p])})}
 setInterval(()=>{tick();const a=document.activeElement?.tagName;if(!busy&&!editingId&&a!=='INPUT'&&a!=='TEXTAREA')render()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editingId){tick();render()}});
 </script>
