@@ -306,10 +306,12 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
         <button class="tool" id="csvPunch"><svg class="ic"><use href="#i-down"/></svg>Punches CSV</button>
         <button class="tool" id="csvLegs"><svg class="ic"><use href="#i-down"/></svg>Mileage CSV</button>
         <button class="tool" id="fix"><svg class="ic"><use href="#i-refresh"/></svg>Retry addresses</button>
+        <button class="tool" id="forgetSpots"><svg class="ic"><use href="#i-pin"/></svg>Forget saved spots</button>
       </div>
       <div id="history" class="hist"></div>
     </div>
   </details>
+  <div class="k" style="text-align:center;opacity:.6">Job Clock · version Oct 29b</div>
 </div>
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt="Job photo"><button id="viewerClose">Close</button></div>
 
@@ -602,14 +604,14 @@ function legsFor(list){
     }
     if(hasLoc(p))from=p;
   }
-  return legs.filter(l=>l.to.legMi==null||l.to.legMi>=0.2||l.to.legSrc==='manual');
+  return legs.filter(l=>l.to.legMi==null||l.to.legMi>=0.2||l.to.legSrc==='manual'||l.to.legKey!==legKey(l));
 }
 const legMiles=legs=>legs.reduce((a,l)=>a+(l.counts?(l.to.legMi||0):0),0);
 // a punch counts as a stop if it has GPS or an address you typed in
 const hasLoc=p=>p.lat!=null||(p.address&&p.address!=='Entered by hand');
 // GPS spot for a punch: its own fix, or the address looked up on the map
 async function coordsOf(p){
-  if(p.lat!=null)return {lat:p.lat,lon:p.lon};
+  if(p.lat!=null&&!(p.manualAddr&&p.address))return {lat:p.lat,lon:p.lon};
   if(p.glat!=null&&p.gaddr===p.address)return {lat:p.glat,lon:p.glon};
   const r=await fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=1&q='+encodeURIComponent(p.address),6000);
   if(!r.ok)throw 0;
@@ -634,7 +636,8 @@ async function fillMiles(){
   save();render();
 }
 // if the start or end of a drive changes (edited address, different stop), re-figure the miles
-const legKey=l=>[l.from.id,l.from.lat??l.from.address,l.to.lat??l.to.address].join('|');
+const endKey=p=>p.manualAddr&&p.address?p.address:(p.lat??p.address);
+const legKey=l=>['v2',l.from.id,endKey(l.from),endKey(l.to)].join('|');
 function editMiles(l,box){
   box.innerHTML='';
   const inp=Object.assign(document.createElement('input'),{type:'number',inputmode:'decimal',step:'0.1',min:'0',className:'field',id:'mi-'+l.to.id,value:l.to.legMi??'',placeholder:'Miles'});
@@ -677,9 +680,11 @@ function editPanel(p){
   const dl=Object.assign(document.createElement('button'),{type:'button',className:'btn danger'+(sureDelete===p.id?' sure':''),textContent:sureDelete===p.id?'Sure?':'Delete'});
   sv.onclick=()=>{
     if(!time.value){say('Pick a time.',true);return}
-    p.time=new Date(time.value).toISOString();
+    const oldTime=p.time;p.time=new Date(time.value).toISOString();
+    const timeMoved=Math.abs(new Date(p.time)-new Date(oldTime))>20*60e3||p.timeEdited;
+    if(new Date(p.time).getTime()!==new Date(oldTime).getTime())p.timeEdited=true;
     const newAddr=addr.value.trim()||null;
-    if(newAddr!==p.address){p.manualAddr=true;if(newAddr&&p.lat!=null)rememberPlace(p.lat,p.lon,newAddr)}
+    if(newAddr!==p.address){p.manualAddr=true;if(newAddr&&p.lat!=null&&!timeMoved)rememberPlace(p.lat,p.lon,newAddr)}
     p.address=newAddr;p.note=note.value.trim()||null;
     if(p.type==='site_in'&&!p.warehouse){
       p.workOrder=wo.value.trim().toUpperCase()||null;p.local=loc;
@@ -689,7 +694,7 @@ function editPanel(p){
         if(punches[j].type==='site_out'){punches[j].workOrder=p.workOrder;punches[j].local=p.local;break}
       }
     }
-    editingId=null;sureDelete=null;save();render();say(newAddr&&p.lat!=null?'Punch updated. That address will be used next time you punch here.':'Punch updated.');
+    editingId=null;sureDelete=null;save();render();say(newAddr&&p.lat!=null&&!timeMoved?'Punch updated. That address will be used next time you punch here.':'Punch updated.');
   };
   cn.onclick=()=>{editingId=null;sureDelete=null;render()};
   dl.onclick=async()=>{
@@ -874,6 +879,11 @@ $('fix').onclick=async()=>{
 $('go').onclick=()=>punch($('go').dataset.type);
 $('alt').onclick=()=>punch($('alt').dataset.type);
 $('woBox').onsubmit=e=>{e.preventDefault();punch('site_in')};
+let sureForget=false;
+$('forgetSpots').onclick=()=>{
+  if(!sureForget){sureForget=true;$('forgetSpots').lastChild.textContent='Tap again to forget';setTimeout(()=>{sureForget=false;$('forgetSpots').lastChild.textContent='Forget saved spots'},4000);return}
+  places=[];write(PLACEKEY,places);sureForget=false;$('forgetSpots').lastChild.textContent='Forget saved spots';say('Saved spots cleared. The warehouse is still built in.');
+};
 $('whBtn').onclick=()=>punch('site_in',{warehouse:true});
 $('noWo').onchange=()=>{$('wo').disabled=$('noWo').checked;if($('noWo').checked)$('wo').value=''};
 $('locBtn').onclick=()=>setLocal(true);
