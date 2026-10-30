@@ -178,6 +178,57 @@ h2 span.v{font:500 15px var(--mono);color:var(--muted);letter-spacing:0;text-tra
 .paybtn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:600 14px var(--body)}
 .payform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .payform .wide{grid-column:1/-1}
+.period{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.period .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.period .ph b{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04em}
+.period .ph span{font:500 13px var(--mono);color:var(--muted)}
+.pgrid{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:15px;font-variant-numeric:tabular-nums}
+.pgrid span:nth-child(even){text-align:right}
+.pgrid .tot{font:700 22px var(--display);color:var(--teal);padding-top:6px;border-top:1px solid var(--line)}
+.plast{font-size:13px;color:var(--muted)}
+.tab{display:flex;flex-direction:column;gap:18px}
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:4px;
+  margin:-6px 0 0;border-radius:16px;background:color-mix(in srgb,var(--line) 70%,var(--bg));box-shadow:0 6px 14px var(--bg)}
+.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 1px;border-radius:12px;font:700 13px var(--display);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tabbar button .ic{width:20px;height:20px}
+.tabbar button[aria-selected="true"]{color:var(--fg);background:var(--panel);box-shadow:var(--shadow)}
+.tabbar button[aria-selected="true"] .ic{color:var(--teal)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--bg)}
+.period.first{border-top:0;padding-top:0}
+.prow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 14px;border-top:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
+.prow:first-child{border-top:0}
+.prow b{font:700 17px var(--display);text-transform:uppercase;letter-spacing:.03em}
+.prow .amt{font:700 20px var(--display);color:var(--teal);text-align:right}
+.prow .sub{color:var(--muted)}
+.prow .sub.r{text-align:right}
+.dayhead{font:600 14px var(--body);color:var(--muted);margin:6px 0 6px;display:flex;justify-content:space-between}
+.dayrow2{padding:12px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.dayrow2:first-child{border-top:0}
+.dayrow2 .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dayrow2 .top b{font:700 17px var(--display);text-transform:uppercase;letter-spacing:.03em}
+.dayrow2 .top span{font:700 20px var(--display);font-variant-numeric:tabular-nums;color:var(--teal)}
+.dayrow2 .io{font:500 14px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.visit{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.visit span:first-child{min-width:0;overflow-wrap:anywhere}
+.visit span:last-child{font:500 13px var(--mono);color:var(--muted);white-space:nowrap}
+.spot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);font-size:14px}
+.spot:first-child{border-top:0}
+.spot span{min-width:0;overflow-wrap:anywhere}
+details.site{border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);padding:0}
+details.site>summary{list-style:none;padding:14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;cursor:pointer;color:var(--fg);font:inherit;text-transform:none;letter-spacing:0}
+details.site>summary::-webkit-details-marker{display:none}
+details.site>summary .nm{font:600 16px var(--body);min-width:0;overflow-wrap:anywhere}
+details.site>summary .sub{font-size:13px;color:var(--muted);margin-top:2px}
+details.site>summary .cnt{font:700 15px var(--display);color:var(--amber);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+details.site[open]>summary{border-bottom:1px solid var(--line)}
+.svisit{padding:12px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.svisit:first-of-type{border-top:0}
+.svisit .vt{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.svisit .vt b{font:700 15px var(--display);text-transform:uppercase;letter-spacing:.04em}
+.svisit .vt span{font:500 13px var(--mono);color:var(--muted);white-space:nowrap}
+.svisit .nt{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.svisit .addnote{align-self:flex-start;color:var(--teal);font:600 14px var(--body);display:inline-flex;gap:6px;align-items:center}
+#siteSearch{font-size:16px}
 .paysub{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
 .paysub span{font-variant-numeric:tabular-nums}
 .net{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 13px var(--body);color:var(--amber);background:color-mix(in srgb,var(--amber) 15%,transparent)}
@@ -201,6 +252,7 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6v10H3z"/><path d="M9 20v-6h6v6"/></symbol>
+<symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></symbol>
 <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
@@ -224,7 +276,15 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
     <div class="brand"><img id="logo" alt="">Job <span>Clock</span></div>
     <div style="display:flex;align-items:center;gap:8px"><span class="net" id="net" hidden>No signal</span><div class="now" id="now"></div></div>
   </header>
+  <nav class="tabbar" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="clock"><svg class="ic"><use href="#i-clock"/></svg><span>Clock</span></button>
+    <button role="tab" data-tab="hours"><svg class="ic"><use href="#i-list"/></svg><span>Hours</span></button>
+    <button role="tab" data-tab="sites"><svg class="ic"><use href="#i-pin"/></svg><span>Sites</span></button>
+    <button role="tab" data-tab="miles"><svg class="ic"><use href="#i-route"/></svg><span>Miles</span></button>
+    <button role="tab" data-tab="pay"><svg class="ic"><use href="#i-cash"/></svg><span>Pay</span></button>
+  </nav>
 
+  <div class="tab" id="tab-clock">
   <section class="status" id="status" data-s="off">
     <span class="pill"><i></i><span id="pill">Off</span></span>
     <div class="state" id="state">Off the clock</div>
@@ -245,15 +305,15 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
 
   <form class="wo" id="woBox" hidden>
     <label class="k" for="wo"><svg class="ic"><use href="#i-hash"/></svg> Work order #</label>
-    <input id="wo" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="Type work order">
+    <input id="wo" list="woList" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="Type work order">
     <div class="chips" id="chips"></div>
     <div class="woopts">
       <label class="nowo" for="noWo"><input type="checkbox" id="noWo">No work order</label>
       <button type="button" class="whbtn" id="whBtn"><svg class="ic"><use href="#i-truck"/></svg>Back at warehouse</button>
     </div>
     <div class="seg" role="group" aria-label="Job type">
-      <button type="button" id="locBtn">Local<small>No mileage</small></button>
-      <button type="button" id="farBtn">Non-local<small>Mileage counts</small></button>
+      <button type="button" id="locBtn">No mileage</button>
+      <button type="button" id="farBtn">Mileage</button>
     </div>
   </form>
 
@@ -274,7 +334,60 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
     <h2><span class="h"><svg class="ic"><use href="#i-list"/></svg>Today</span><span class="v" id="todayHrs"></span></h2>
     <div class="card" id="today"></div>
   </section>
-
+  </div>
+  <div class="tab" id="tab-hours" hidden>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-clock"/></svg>Hours</span><span class="v" id="hrsRange"></span></h2>
+    <div class="card" id="hrsSummary"></div>
+  </section>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-cal"/></svg>By day</span></h2>
+    <div id="hrsDays" class="hist" style="margin-top:0"></div>
+  </section>
+  <details>
+    <summary>Punch history &amp; export</summary>
+    <div class="hist">
+      <div class="tools">
+        <button class="tool" id="csvPunch"><svg class="ic"><use href="#i-down"/></svg>Punches CSV</button>
+        <button class="tool" id="csvLegs"><svg class="ic"><use href="#i-down"/></svg>Mileage CSV</button>
+        <button class="tool" id="fix"><svg class="ic"><use href="#i-refresh"/></svg>Retry addresses</button>
+        <button class="tool" id="forgetSpots"><svg class="ic"><use href="#i-pin"/></svg>Forget saved spots</button>
+      </div>
+      <div id="history" class="hist"></div>
+    </div>
+  </details>
+  </div>
+  <div class="tab" id="tab-sites" hidden>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-pin"/></svg>Job sites</span><span class="v" id="siteCount"></span></h2>
+    <input class="field" id="siteSearch" type="search" placeholder="Search school, business, address, WO" autocomplete="off" enterkeyhint="search">
+  </section>
+  <div id="siteList" class="hist" style="margin-top:0"></div>
+  </div>
+  <div class="tab" id="tab-miles" hidden>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-route"/></svg>Mileage today</span><span class="v" id="todayMi"></span></h2>
+    <div class="card" id="legs"></div>
+  </section>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-list"/></svg>All drives</span><span class="v" id="allMi"></span></h2>
+    <div class="tools" style="margin-bottom:12px"><button class="tool" id="csvLegs2"><svg class="ic"><use href="#i-down"/></svg>Mileage CSV</button></div>
+    <div id="allLegs" class="hist" style="margin-top:0"></div>
+  </section>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-pin"/></svg>Saved spots</span></h2>
+    <div class="card" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+      <div class="k">Addresses here pop up as you type, and fill in on their own when you punch near a spot you fixed before.</div>
+      <form id="spotForm" style="display:flex;gap:8px"><input class="field" id="spotIn" list="addrList" placeholder="Add an address, like a school" autocomplete="off"><button class="tool" type="submit">Add</button></form>
+    </div>
+    <div class="card" id="spots" style="margin-top:8px"></div>
+  </section>
+  </div>
+  <div class="tab" id="tab-pay" hidden>
+  <section>
+    <h2><span class="h"><svg class="ic"><use href="#i-cash"/></svg>Paycheck</span></h2>
+    <div class="pay" style="margin-top:0"><div class="period first" id="period"></div></div>
+  </section>
   <section>
     <h2><span class="h"><svg class="ic"><use href="#i-cal"/></svg>This week</span><span class="v" id="weekRange"></span></h2>
     <div class="card" id="week"></div>
@@ -289,30 +402,22 @@ summary{font:700 18px var(--display);text-transform:uppercase;letter-spacing:.04
         <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payOtAfter">Overtime after (hrs/wk)</label><input class="field" id="payOtAfter" type="number" inputmode="decimal" step="0.5" min="0" placeholder="40"></div>
         <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payOtMult">Overtime pay (x)</label><input class="field" id="payOtMult" type="number" inputmode="decimal" step="0.05" min="1" placeholder="1.5"></div>
         <div style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payMile">Mileage pay ($/mi, optional)</label><input class="field" id="payMile" type="number" inputmode="decimal" step="0.001" min="0" placeholder="e.g. 0.70"></div>
+        <div class="wide" style="display:flex;flex-direction:column;gap:4px"><label class="k" for="payStart">First Monday of a pay period (any one)</label><input class="field" id="payStart" type="date"></div>
         <button class="btn pri wide" type="submit">Save pay rate</button>
       </form>
     </div>
   </section>
-
   <section>
-    <h2><span class="h"><svg class="ic"><use href="#i-route"/></svg>Mileage today</span><span class="v" id="todayMi"></span></h2>
-    <div class="card" id="legs"></div>
+    <h2><span class="h"><svg class="ic"><use href="#i-list"/></svg>Past pay periods</span></h2>
+    <div class="card" id="periods"></div>
   </section>
+  </div>
 
-  <details>
-    <summary>History &amp; export</summary>
-    <div class="hist">
-      <div class="tools">
-        <button class="tool" id="csvPunch"><svg class="ic"><use href="#i-down"/></svg>Punches CSV</button>
-        <button class="tool" id="csvLegs"><svg class="ic"><use href="#i-down"/></svg>Mileage CSV</button>
-        <button class="tool" id="fix"><svg class="ic"><use href="#i-refresh"/></svg>Retry addresses</button>
-        <button class="tool" id="forgetSpots"><svg class="ic"><use href="#i-pin"/></svg>Forget saved spots</button>
-      </div>
-      <div id="history" class="hist"></div>
-    </div>
-  </details>
-  <div class="k" style="text-align:center;opacity:.6">Job Clock · version Oct 29b</div>
+
+
+  <div class="k" style="text-align:center;opacity:.6">Job Clock · version Oct 30b</div>
 </div>
+<datalist id="addrList"></datalist><datalist id="woList"></datalist>
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt="Job photo"><button id="viewerClose">Close</button></div>
 
 <script>
@@ -613,6 +718,8 @@ const hasLoc=p=>p.lat!=null||(p.address&&p.address!=='Entered by hand');
 async function coordsOf(p){
   if(p.lat!=null&&!(p.manualAddr&&p.address))return {lat:p.lat,lon:p.lon};
   if(p.glat!=null&&p.gaddr===p.address)return {lat:p.glat,lon:p.glon};
+  const sp=[...places,...BUILTIN].find(s=>s.lat!=null&&s.address&&p.address&&s.address.toLowerCase()===p.address.toLowerCase());
+  if(sp)return {lat:sp.lat,lon:sp.lon};
   const r=await fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=1&q='+encodeURIComponent(p.address),6000);
   if(!r.ok)throw 0;
   const j=(await r.json())[0];if(!j)throw 0;
@@ -660,16 +767,16 @@ function editPanel(p){
   box.append(f(lab(p)+' time',time));
   let wo,loc=p.local;
   if(p.type==='site_in'&&!p.warehouse){
-    wo=Object.assign(document.createElement('input'),{className:'field',id:'eWo-'+p.id,value:p.workOrder||'',autocapitalize:'characters'});
+    wo=Object.assign(document.createElement('input'),{className:'field',id:'eWo-'+p.id,value:p.workOrder||'',autocapitalize:'characters',autocomplete:'off'});wo.setAttribute('list','woList');
     box.append(f('Work order #',wo));
     const seg=document.createElement('div');seg.className='seg';
-    const b1=Object.assign(document.createElement('button'),{type:'button',innerHTML:'Local<small>No mileage</small>'});
-    const b2=Object.assign(document.createElement('button'),{type:'button',innerHTML:'Non-local<small>Mileage counts</small>'});
+    const b1=Object.assign(document.createElement('button'),{type:'button',innerHTML:'No mileage'});
+    const b2=Object.assign(document.createElement('button'),{type:'button',innerHTML:'Mileage'});
     const paint=()=>{b1.setAttribute('aria-pressed',loc===true);b2.setAttribute('aria-pressed',loc!==true)};
     b1.onclick=()=>{loc=true;paint()};b2.onclick=()=>{loc=false;paint()};paint();
     seg.append(b1,b2);box.append(seg);
   }
-  const addr=Object.assign(document.createElement('input'),{className:'field',id:'eAddr-'+p.id,value:p.address||''});
+  const addr=Object.assign(document.createElement('input'),{className:'field',id:'eAddr-'+p.id,value:p.address||'',autocomplete:'off'});addr.setAttribute('list','addrList');
   box.append(f('Address',addr));
   const note=Object.assign(document.createElement('input'),{className:'field',id:'eNote-'+p.id,value:p.note||''});
   box.append(f('Note',note));
@@ -714,7 +821,7 @@ function punchRows(list,box){
     if(editingId===p.id){box.appendChild(editPanel(p));return}
     const r=document.createElement('div');r.className='row';
     const map=p.lat!=null?`https://maps.google.com/?q=${p.lat},${p.lon}`:null;
-    const tagExtra=(p.workOrder?' · '+esc(p.workOrder):(p.type==='site_in'&&!p.warehouse?' · No WO':''))+(p.type==='site_in'&&!p.warehouse&&p.local!=null?(p.local?' · Local':' · Non-local'):'');
+    const tagExtra=(p.workOrder?' · '+esc(p.workOrder):(p.type==='site_in'&&!p.warehouse?' · No WO':''))+(p.type==='site_in'&&!p.warehouse&&p.local!=null?(p.local?' · No mileage':' · Mileage'):'');
     r.innerHTML=`<div class="badge ${CLS[p.type]}">${ic(p.warehouse?'home':ICON[p.type])}</div><div class="info">
       <div class="tagline"><span class="tag">${lab(p)}${tagExtra}</span><span class="t">${fmtTime(p.time)}</span></div>
       <span class="addr">${map?`<a href="${map}" target="_blank" rel="noopener">${esc(place(p))}</a>`:esc(place(p))}</span>
@@ -735,7 +842,7 @@ function legRows(legs,box){
   legs.forEach(l=>{
     const r=document.createElement('div');r.className='leg'+(l.counts?'':' off');
     const unknown=l.counts&&l.to.legMi==null&&!filling;
-    r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??(unknown?'?':'…')):'0'}<small>${l.counts?(unknown?'add miles':l.to.legSrc==='est'?'mi est':l.to.legSrc==='manual'?'typed':'miles'):'local'}</small></div>
+    r.innerHTML=`<div class="mi">${l.counts?(l.to.legMi??(unknown?'?':'…')):'0'}<small>${l.counts?(unknown?'add miles':l.to.legSrc==='est'?'mi est':l.to.legSrc==='manual'?'typed':'miles'):'no mileage'}</small></div>
       <div class="route"><span class="k">From</span><span>${esc(place(l.from))}</span><span class="k">To</span><span>${esc(place(l.to))}</span>
       <span class="k">Work order</span><span>${l.wo?esc(l.wo):l.wh?'Warehouse':l.to.type==='clock_out'?'None (drive home)':'None'}</span></div>`;
     if(l.counts){
@@ -765,6 +872,47 @@ function payFor(w){
   const reg=regMs/3600e3*pay.rate,ot=otMs/3600e3*pay.rate*(pay.otMult||1.5),mi=pay.mile?w.mi*pay.mile:0;
   return {reg,ot,mi,gross:reg+ot,regH:regMs/3600e3,otH:otMs/3600e3};
 }
+// 2-week pay periods (Mon–Sun x2), paid the Thursday after: overtime is figured per week, mileage pay added on top
+const DEFAULT_PERIOD='2026-10-19', PAYDAY_AFTER=4; // period ends Sunday, paid Thursday
+function periodStartFor(d){
+  const anchor=new Date((pay.periodStart||DEFAULT_PERIOD)+'T00:00:00');
+  const x=new Date(d);x.setHours(0,0,0,0);
+  const n=Math.floor(Math.round((x-anchor)/864e5)/14);
+  const s=new Date(anchor);s.setDate(s.getDate()+n*14);return s;
+}
+function periodSummary(start){
+  const w2s=new Date(start);w2s.setDate(w2s.getDate()+7);
+  const w1=weekSummary(start),w2=weekSummary(w2s),p1=payFor(w1),p2=payFor(w2);
+  const end=new Date(start);end.setDate(end.getDate()+13);
+  const r={start,end,hrs:w1.tot+w2.tot,ot:w1.ot+w2.ot,mi:w1.mi+w2.mi};
+  if(p1&&p2){r.gross=p1.gross+p2.gross;r.reg=p1.reg+p2.reg;r.otPay=p1.ot+p2.ot;r.miPay=p1.mi+p2.mi;r.total=r.gross+r.miPay}
+  return r;
+}
+const shortDate=d=>d.toLocaleDateString([], {month:'short',day:'numeric'});
+const payDayOf=p=>{const d=new Date(p.end);d.setDate(d.getDate()+PAYDAY_AFTER);return d};
+const dayName=d=>d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+function renderPeriod(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const cur=periodSummary(periodStartFor(today));
+  const prevStart=new Date(cur.start);prevStart.setDate(prevStart.getDate()-14);
+  const prev=periodSummary(prevStart);
+  // the next check: last period's if its payday hasn't come yet, otherwise this one's
+  const next=payDayOf(prev)>=today?prev:cur;
+  const box=$('period');
+  if(cur.gross==null){box.innerHTML=`<div class="ph"><b>Pay period</b><span>${shortDate(cur.start)} – ${shortDate(cur.end)}</span></div><div class="plast">Set your pay rate to see the full pay period.</div>`;return}
+  const pd=payDayOf(next),until=Math.round((pd-today)/864e5);
+  const left=Math.max(0,Math.round((cur.end-today)/864e5));
+  const rows=p=>`<div class="pgrid">
+      <span>Hours</span><span>${hm(p.hrs)}${p.ot?` (${hm(p.ot)} OT)`:''}</span>
+      <span>Hourly pay</span><span>${money(p.gross)}</span>
+      ${pay.mile?`<span>Mileage (${p.mi.toFixed(1)} mi)</span><span>${money(p.miPay)}</span>`:''}
+      <span class="tot">Total</span><span class="tot">${money(p.total)}</span></div>`;
+  let html=`<div class="ph"><b>Next payday</b><span>${dayName(pd)}${until===0?' · today':until===1?' · tomorrow':` · in ${until} days`}</span></div>
+    <div class="plast">For ${shortDate(next.start)} – ${shortDate(next.end)}${next===cur?` · ${left?left+' day'+(left>1?'s':'')+' left in period':'last day of period'}`:''}</div>${rows(next)}`;
+  if(next!==cur)html+=`<div class="plast">Current period (${shortDate(cur.start)} – ${shortDate(cur.end)}, paid ${dayName(payDayOf(cur))}): ${money(cur.total)} so far · ${hm(cur.hrs)} · ${cur.mi.toFixed(1)} mi</div>`;
+  else html+=`<div class="plast">Last period (${shortDate(prev.start)} – ${shortDate(prev.end)}): ${money(prev.total)} · ${hm(prev.hrs)} · ${prev.mi.toFixed(1)} mi</div>`;
+  box.innerHTML=html;
+}
 function renderPay(w){
   const p=payFor(w);
   if(!p){$('payAmt').innerHTML='$ —<small>Set your hourly rate to see this week\'s pay</small>';$('paySub').innerHTML='';return}
@@ -775,12 +923,12 @@ function renderPay(w){
 }
 $('payEdit').onclick=()=>{
   const f=$('payForm');f.hidden=!f.hidden;
-  if(!f.hidden){$('payRate').value=pay.rate??'';$('payOtAfter').value=pay.otAfter??40;$('payOtMult').value=pay.otMult??1.5;$('payMile').value=pay.mile??'';$('payRate').focus()}
+  if(!f.hidden){$('payRate').value=pay.rate??'';$('payOtAfter').value=pay.otAfter??40;$('payOtMult').value=pay.otMult??1.5;$('payMile').value=pay.mile??'';$('payStart').value=pay.periodStart||DEFAULT_PERIOD;$('payRate').focus()}
 };
 $('payForm').onsubmit=e=>{
   e.preventDefault();
   const num=(v,d)=>{const n=parseFloat(v);return isFinite(n)&&n>=0?n:d};
-  pay={rate:num($('payRate').value,null)||null,otAfter:num($('payOtAfter').value,40),otMult:num($('payOtMult').value,1.5)||1.5,mile:num($('payMile').value,null)||null};
+  pay={rate:num($('payRate').value,null)||null,otAfter:num($('payOtAfter').value,40),otMult:num($('payOtMult').value,1.5)||1.5,mile:num($('payMile').value,null)||null,periodStart:$('payStart').value||pay.periodStart||null};
   write(PAYKEY,pay);$('payForm').hidden=true;render();say(pay.rate?'Pay rate saved.':'Pay rate cleared.');
 };
 function renderWeek(){
@@ -792,7 +940,7 @@ function renderWeek(){
       <div class="stat ot"><span class="k">Overtime</span><b>${hm(w.ot)}</b></div>
       <div class="stat mi2"><span class="k">Miles</span><b>${w.mi.toFixed(1)}</b></div></div>
     <div class="days">${w.days.filter(x=>x.h||x.m||x.k===tk).map(x=>`<div class="dayrow${x.k===tk?' today':''}">${x.d.toLocaleDateString([], {weekday:'short',month:'numeric',day:'numeric'})}<span>${hm(x.h)}</span><span>${x.m.toFixed(1)} mi</span></div>`).join('')}</div>`;
-  renderPay(w);
+  renderPay(w);renderPeriod();renderAllLegs();renderPeriods();renderHours();renderSpots();fillLists();if(document.activeElement?.tagName!=='TEXTAREA')renderSites();
 }
 
 function render(){
@@ -864,8 +1012,8 @@ function download(rows,name){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;
   document.body.appendChild(a);a.click();a.remove();
 }
-$('csvPunch').onclick=()=>download([['date','time','type','work_order','local','address','latitude','longitude','note','job_notes','photos'],
-  ...punches.map(p=>[dayKey(p.time),fmtTime(p.time),lab(p),p.workOrder,p.local==null?'':(p.local?'local':'non-local'),p.address,p.lat,p.lon,p.note,p.jobNotes,(p.photos||[]).length||''])],`punches-${dayKey(new Date())}.csv`);
+$('csvPunch').onclick=()=>download([['date','time','type','work_order','mileage','address','latitude','longitude','note','job_notes','photos'],
+  ...punches.map(p=>[dayKey(p.time),fmtTime(p.time),lab(p),p.workOrder,p.local==null?'':(p.local?'no mileage':'mileage'),p.address,p.lat,p.lon,p.note,p.jobNotes,(p.photos||[]).length||''])],`punches-${dayKey(new Date())}.csv`);
 $('csvLegs').onclick=()=>download([['date','miles','estimated','start_location','end_location','work_order'],
   ...Object.entries(byDay()).sort().flatMap(([k,l])=>legsFor(l).filter(x=>x.counts).map(x=>[k,x.to.legMi,x.to.legSrc==='est'?'yes':'no',place(x.from),place(x.to),x.wo]))],`mileage-${dayKey(new Date())}.csv`);
 $('fix').onclick=async()=>{
@@ -875,6 +1023,183 @@ $('fix').onclick=async()=>{
   save();await fillMiles();render();say('Done.');
 };
 
+
+/* ---------- tabs ---------- */
+let tab=read('jobclock.tab','clock');
+function showTab(t){
+  tab=['clock','hours','sites','miles','pay'].includes(t)?t:'clock';write('jobclock.tab',tab);
+  ['clock','hours','sites','miles','pay'].forEach(n=>{$('tab-'+n).hidden=n!==tab});
+  document.querySelectorAll('.tabbar button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tabbar button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+$('csvLegs2').onclick=()=>$('csvLegs').click();
+
+/* every drive, grouped by pay period then day */
+function renderAllLegs(){
+  const days=byDay(),keys=Object.keys(days).sort().reverse(),box=$('allLegs');box.innerHTML='';
+  let curP=null,total=0;
+  keys.forEach(k=>{
+    const lg=legsFor(days[k]);if(!lg.length)return;
+    const ps=periodStartFor(new Date(k+'T12:00:00')),pk=dayKey(ps);
+    if(pk!==curP){
+      curP=pk;const p=periodSummary(ps);
+      const head=document.createElement('div');head.className='weekhead';
+      head.innerHTML=`${shortDate(p.start)} – ${shortDate(p.end)}<span>${p.mi.toFixed(1)} mi${pay.mile?' · '+money(p.mi*pay.mile):''}</span>`;
+      box.appendChild(head);
+    }
+    const m=legMiles(lg);total+=m;
+    const dh=document.createElement('div');dh.className='dayhead';
+    dh.innerHTML=`<span>${fmtDay(days[k][0].time)}</span><span>${m.toFixed(1)} mi</span>`;
+    const c=document.createElement('div');c.className='card';legRows(lg,c);
+    box.append(dh,c);
+  });
+  if(!box.children.length)box.innerHTML='<div class="empty card">No drives yet. They show up here once you check in at a site or clock out.</div>';
+  $('allMi').textContent=total?total.toFixed(1)+' mi':'';
+}
+
+/* every pay period with data, newest first */
+function renderPeriods(){
+  const box=$('periods');box.innerHTML='';
+  if(!punches.length||!pay.rate){box.innerHTML=`<div class="empty">${pay.rate?'Past pay periods show up here.':'Set your pay rate on this tab to see pay periods.'}</div>`;return}
+  const first=periodStartFor(new Date(punches[0].time));
+  let s=periodStartFor(new Date());
+  while(s>=first){
+    const p=periodSummary(s);
+    if(p.hrs||p.mi){
+      const r=document.createElement('div');r.className='prow';
+      r.innerHTML=`<b>${shortDate(p.start)} – ${shortDate(p.end)}</b><span class="amt">${money(p.total)}</span>
+        <span class="sub">Paid ${dayName(payDayOf(p))} · ${hm(p.hrs)}${p.ot?` (${hm(p.ot)} OT)`:''}</span><span class="sub r">${money(p.gross)} hourly</span>
+        <span class="sub">${p.mi.toFixed(1)} mi</span><span class="sub r">${pay.mile?money(p.miPay)+' mileage':''}</span>`;
+      box.appendChild(r);
+    }
+    s=new Date(s);s.setDate(s.getDate()-14);
+  }
+  if(!box.children.length)box.innerHTML='<div class="empty">Past pay periods show up here.</div>';
+}
+
+/* ---------- hours tab ---------- */
+function visitsFor(list){
+  const out=[];let cur=null;
+  for(const p of list){
+    if(p.type==='site_in'){cur={p,start:p.time,end:null}}
+    else if((p.type==='site_out'||p.type==='clock_out')&&cur){cur.end=p.time;out.push(cur);cur=null}
+  }
+  if(cur)out.push(cur);
+  return out;
+}
+function renderHours(){
+  const hrs=hoursByDay(),days=byDay(),ws=weekStart(new Date()),w=weekSummary(ws);
+  const per=periodSummary(periodStartFor(new Date()));
+  $('hrsRange').textContent='';
+  $('hrsSummary').innerHTML=`<div class="stats">
+      <div class="stat"><span class="k">Today</span><b>${hm(hrs[dayKey(new Date())]||0)}</b></div>
+      <div class="stat"><span class="k">This week</span><b>${hm(w.tot)}</b></div>
+      <div class="stat ot"><span class="k">Week OT</span><b>${hm(w.ot)}</b></div></div>
+    <div class="days"><div class="dayrow">Pay period ${shortDate(per.start)} – ${shortDate(per.end)}<span>${hm(per.hrs)}</span><span>${per.ot?hm(per.ot)+' OT':''}</span></div></div>`;
+  const box=$('hrsDays');box.innerHTML='';
+  let curW=null,card=null;
+  Object.keys(days).sort().reverse().forEach(k=>{
+    const list=days[k],wsk=dayKey(weekStart(list[0].time));
+    if(wsk!==curW){
+      curW=wsk;const s=weekSummary(weekStart(list[0].time));
+      const head=document.createElement('div');head.className='weekhead';
+      head.innerHTML=`Week of ${shortDate(weekStart(list[0].time))}<span>${hm(s.tot)}${s.ot?' · '+hm(s.ot)+' OT':''}</span>`;
+      card=document.createElement('div');card.className='card';box.append(head,card);
+    }
+    const ins=list.filter(p=>p.type==='clock_in'),outs=list.filter(p=>p.type==='clock_out');
+    const r=document.createElement('div');r.className='dayrow2';
+    const io=ins.length?`${fmtTime(ins[0].time)} – ${outs.length&&new Date(outs[outs.length-1].time)>new Date(ins[0].time)?fmtTime(outs[outs.length-1].time):'on the clock'}`:'';
+    r.innerHTML=`<div class="top"><b>${fmtDay(list[0].time)}</b><span>${hm(hrs[k]||0)}</span></div>${io?`<div class="io">${io}</div>`:''}`+
+      visitsFor(list).map(v=>`<div class="visit"><span>${v.p.warehouse?'Warehouse':esc(v.p.workOrder||'No WO')} · ${esc(place(v.p))}</span><span>${fmtTime(v.start)}–${v.end?fmtTime(v.end):'now'}</span></div>`).join('');
+    card.appendChild(r);
+  });
+  if(!box.children.length)box.innerHTML='<div class="empty card">Your days show up here once you clock in.</div>';
+}
+
+/* ---------- saved spots + typing suggestions ---------- */
+function allAddresses(){
+  const seen=new Map();
+  const add=a=>{if(a&&a!=='Entered by hand'&&!seen.has(a.toLowerCase()))seen.set(a.toLowerCase(),a)};
+  BUILTIN.forEach(s=>add(s.address));places.forEach(s=>add(s.address));
+  punches.slice().reverse().forEach(p=>add(p.address));
+  return [...seen.values()];
+}
+function fillLists(){
+  $('addrList').innerHTML=allAddresses().map(a=>`<option value="${esc(a)}"></option>`).join('');
+  const wos=[...new Set(punches.slice().reverse().map(p=>p.workOrder).filter(Boolean))];
+  $('woList').innerHTML=wos.map(w=>`<option value="${esc(w)}"></option>`).join('');
+}
+let sureSpot=null;
+function renderSpots(){
+  const box=$('spots');box.innerHTML='';
+  BUILTIN.forEach(s=>{const r=document.createElement('div');r.className='spot';r.innerHTML=`<span>${esc(s.address)}</span><span class="k">built in</span>`;box.appendChild(r)});
+  places.forEach((s,i)=>{
+    const r=document.createElement('div');r.className='spot';
+    r.innerHTML=`<span>${esc(s.address)}${s.lat==null?' <span class="k">(typed)</span>':''}</span>`;
+    const x=document.createElement('button');x.className='editbtn';x.textContent=sureSpot===i?'Remove?':'✕';x.setAttribute('aria-label','Remove spot');
+    x.onclick=()=>{if(sureSpot===i){places.splice(i,1);write(PLACEKEY,places);sureSpot=null}else sureSpot=i;render()};
+    r.appendChild(x);box.appendChild(r);
+  });
+}
+$('spotForm').onsubmit=e=>{
+  e.preventDefault();const a=$('spotIn').value.trim();if(!a)return;
+  if(!allAddresses().some(x=>x.toLowerCase()===a.toLowerCase())||!places.some(s=>s.address.toLowerCase()===a.toLowerCase())){places.push({lat:null,lon:null,address:a});write(PLACEKEY,places)}
+  $('spotIn').value='';render();say('Spot saved.');
+};
+
+/* ---------- job sites: every check-in grouped by place ---------- */
+const openSites=new Set();let openVisit=null;
+function siteGroups(){
+  const groups=[];
+  const sameSpot=(g,p)=>{
+    if(g.addr&&p.address&&g.addr.toLowerCase()===p.address.toLowerCase())return true;
+    return g.lat!=null&&p.lat!=null&&meters(g,p)<200;
+  };
+  punches.filter(p=>p.type==='site_in'&&!p.warehouse).forEach(p=>{
+    let g=groups.find(g=>sameSpot(g,p));
+    if(!g){g={key:p.id,lat:p.lat,lon:p.lon,addr:p.address,visits:[]};groups.push(g)}
+    g.visits.push(p);
+    if(p.address&&(p.manualAddr||!g.addr))g.addr=p.address; // newest/hand-fixed address names the site
+    if(g.lat==null&&p.lat!=null){g.lat=p.lat;g.lon=p.lon}
+  });
+  groups.forEach(g=>{g.visits.sort((a,b)=>a.time<b.time?1:-1);g.last=g.visits[0].time});
+  return groups.sort((a,b)=>a.last<b.last?1:-1);
+}
+function visitEnd(p){const i=punches.indexOf(p);for(let j=i+1;j<punches.length;j++){const q=punches[j];if(q.type==='site_out'||q.type==='clock_out')return q.time;if(q.type==='site_in'||q.type==='clock_in')return null}return null}
+function renderSites(){
+  const q=$('siteSearch').value.trim().toLowerCase();
+  const all=siteGroups();
+  const list=q?all.filter(g=>[g.addr,...g.visits.flatMap(v=>[v.workOrder,v.jobNotes,v.note,v.address])].filter(Boolean).join(' ').toLowerCase().includes(q)):all;
+  $('siteCount').textContent=all.length?all.length+' site'+(all.length>1?'s':''):'';
+  const box=$('siteList');box.innerHTML='';
+  list.forEach(g=>{
+    const d=document.createElement('details');d.className='site';if(openSites.has(g.key)||(q&&list.length<=3))d.open=true;
+    d.ontoggle=()=>{d.open?openSites.add(g.key):openSites.delete(g.key)};
+    const wos=[...new Set(g.visits.map(v=>v.workOrder).filter(Boolean))];
+    const photos=g.visits.reduce((n,v)=>n+(v.photos||[]).length,0);
+    d.innerHTML=`<summary><div style="min-width:0"><div class="nm">${esc(g.addr||place(g.visits[0]))}</div>
+      <div class="sub">Last here ${fmtDay(g.last)}${wos.length?' · '+wos.slice(0,3).map(esc).join(', ')+(wos.length>3?'…':''):''}${photos?` · ${photos} photo${photos>1?'s':''}`:''}</div></div>
+      <span class="cnt">${g.visits.length} visit${g.visits.length>1?'s':''}</span></summary>`;
+    g.visits.forEach(v=>{
+      const end=visitEnd(v);
+      const row=document.createElement('div');row.className='svisit';
+      row.innerHTML=`<div class="vt"><b>${fmtDay(v.time)} · ${esc(v.workOrder||'No WO')}</b><span>${fmtTime(v.time)}–${end?fmtTime(end):'now'}</span></div>
+        ${v.jobNotes?`<div class="nt">${esc(v.jobNotes)}</div>`:''}${v.note?`<div class="nt" style="color:var(--muted)">${esc(v.note)}</div>`:''}`;
+      if(v.photos?.length){
+        const m=document.createElement('div');m.className='mini';
+        v.photos.forEach(id=>{const i=document.createElement('img');i.alt='Job photo';photoURL(id).then(u=>{if(u){i.src=u;i.onclick=()=>openViewer(u)}});m.appendChild(i)});
+        row.appendChild(m);
+      }
+      if(openVisit===v.id){row.appendChild(jobEditor(v));const done=Object.assign(document.createElement('button'),{className:'addnote',textContent:'Done'});done.onclick=()=>{openVisit=null;renderSites()};row.appendChild(done)}
+      else{const b=document.createElement('button');b.className='addnote';b.innerHTML=ic('camera')+(v.jobNotes||v.photos?.length?'Edit notes & photos':'Add notes & photos');b.onclick=()=>{openVisit=v.id;openSites.add(g.key);renderSites()};row.appendChild(b)}
+      d.appendChild(row);
+    });
+    box.appendChild(d);
+  });
+  if(!box.children.length)box.innerHTML=`<div class="empty card">${q?'No sites match that search.':'Sites show up here after you check in at a job.'}</div>`;
+}
+$('siteSearch').oninput=()=>renderSites();
 /* ---------- wire up ---------- */
 $('go').onclick=()=>punch($('go').dataset.type);
 $('alt').onclick=()=>punch($('alt').dataset.type);
@@ -903,7 +1228,7 @@ async function backOnline(){
 }
 addEventListener('online',backOnline);addEventListener('offline',()=>{$('net').hidden=false});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
-tick();render();backOnline();
+showTab(tab);tick();render();backOnline();
 if(relocate.length){say('Finishing your last punch\'s location…');relocate.forEach(p=>{p.locating=true;p.address=p.address||null;locate([p])})}
 setInterval(()=>{tick();const a=document.activeElement?.tagName;if(!busy&&!editingId&&a!=='INPUT'&&a!=='TEXTAREA')render()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editingId){tick();render()}});
